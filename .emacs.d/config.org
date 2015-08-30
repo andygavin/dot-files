@@ -1,0 +1,823 @@
+* Introduction
+The number of times I've started emacs configuration from scratch is at least the number of places I've worked multiplied by two.  There's no single reason for starting again, but besides commerical restrictions on what you can take with you, I've found that my configuration can often be an number of hacks that evolved to solve problems at particular times. When emacs is upgraded or I move the effort doesn't seem worth it to work out what I intended previously and I throw something together to meet the job in hand.
+
+So this is a different approach, which had greater scope for structuring the intialisation parameters with an explaination of why I did it at the time.
+
+** Typical Emacs Configuration
+Typical emacs configuration does not have to be this way.  You would normally find in people's ~.emacs~ file and ~.emacs.d/~ directory a collections of .el files which are the Emacs Lisp configuration for the editor. This configuration is inspired by a number of configurations on the internet, that use org-mode's babel package to literately write the configuration.  This package will extract the configuration from this documentation and optionally compile it.  This configuration is unlikely to work on earlier versions of emacs that don't have the emacs package manager, or a relavtively recent version of org-mode.  It would be possible to modify it to use local versions of these things and load them in the bootstrap.  
+
+To enable this we still will need to bootstrap ~org-babel~ this is done using:
+
+#+begin_src emacs-lisp  :tangle no
+(require 'package)
+(require 'org)
+(org-babel-load-file "~/.emacs.d/init.org")
+#+END_SRC
+
+The bootstrap is placed in the ~.emacs.d/init.el~ file, this file is the file that is normally loaded by emacs on startup\mdash a more modern version of the old ~.emacs~ file.  Aquamacs, however, has a slightly modified configuration system where, should the built-in preferences be used, I've found only the ~.emacs~ file is read. To avoid this I'm exclusively configuring it as I do other emacsen: via these files alone.
+ 
+** Initial Setup
+
+There are a few things we want to do early to clean up the window.  For graphical versions of emacs they often have toolbars and menus.  We turn these off early to avoid them from appearing then disappearing.  Each of these is guarded by a predicate to ensure that the parameter exists in the environment:
+
+#+begin_src emacs-lisp
+(if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
+(if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
+(if (custom-variable-p 'inhibit-splash-screen)  (setq inhibit-splash-screen t))
+(if (custom-variable-p 'inhibit-startup-message) (setq inhibit-startup-message t))
+#+end_src
+
+** Ensure we have the packages we want
+To assume the least about the what has been shipped with the version of emacs we have we will use the now standard package manager.  First we will set up some decent well known repositories, these are used in order. We assume that emacs includes the its default.
+
+#+begin_src emacs-lisp
+(add-to-list 'package-archives
+             '("melpa-stable" . "http://stable.melpa.org/packages/") t)
+(add-to-list 'package-archives
+             '("melpa" . "http://melpa.org/packages/") t)
+(setq package-user-dir (concat user-emacs-directory "elpa"))
+(add-to-list 'load-path (concat user-emacs-directory "site-lisp"))
+#+end_src
+
+Here we have also set where the package manager will place the installation of the packages, and an area for custom lisp ~site-lisp~. The packages we want to ensure we have are:
+
+#+begin_src emacs-lisp
+(defvar init/packages '(
+                        ido-ubiquitous
+                        ace-jump-mode
+                        epl
+                        yasnippet
+                        diminish
+                        use-package
+                        cider
+                        company
+                        hl-sexp
+                        clj-refactor
+                        let-alist
+                        flycheck-clojure
+                        flycheck-pos-tip
+                        flycheck
+                        feature-mode
+                        gist
+                       ;; breadcrumb
+                        go-mode
+                        graphviz-dot-mode
+                        haskell-mode
+                        htmlize
+                        markdown-mode
+                        o-blog
+                        org
+                        paredit
+                        restclient
+                        smex
+                        solarized-theme
+                        web-mode
+                        writegood-mode
+                        rust-mode
+                        exec-path-from-shell
+                        zenburn-theme
+                        s
+                        epg
+                        twittering-mode
+                        ;;                        sqlplus
+                        linum
+                        ;; aggressive-indent
+                        regex-tool
+                        ) "Default packages")
+#+end_src
+
+To ensure these packages are loaded lets define a couple of functions. One which ensures as single package is installed, the other which takes a list and handles any loading errors.
+
+#+begin_src emacs-lisp
+(defun ensure-package-installed (package &optional min-version no-refresh)
+  "Install given PACKAGE, optionally requiring MIN-VERSION.
+If NO-REFRESH is non-nil, the available package lists will not be
+re-downloaded in order to locate PACKAGE."
+  (if (package-installed-p package min-version)
+      t
+    (if (or (assoc package package-archive-contents) no-refresh)
+        (package-install package)
+      (progn
+        (package-refresh-contents)
+        (ensure-package-installed package min-version t)))))
+
+
+
+(defun ensure-packages-installed (package-list)
+  "Ensure that packages are installed in this emacs installation"
+  (dolist (package package-list)
+    (condition-case ex
+        (ensure-package-installed package)
+      ('error (warn (concat "Failed to install package " (symbol-name package)))))))
+
+#+end_src
+
+Now we can ensure that our list of packages are installed:
+
+#+begin_src emacs-lisp
+(setq package-enable-at-startup nil) ; Don't initialize later as well
+(package-initialize)
+(ensure-packages-installed init/packages)
+#+end_src
+
+* General Editing
+Before we start setting up different modes for specific operations and
+languages first we'll set up some global settings and try and
+normalise the settings across different platforms.
+
+** Encoding
+Most environments I work on now are 8-bit clean. Emacs interaction
+with the clipboards in these environments default to UTF-8 and
+suprises occur occasionally if encoding of extended characters are not
+UTF-8.  So we're setting our default encoding, and avoiding the
+strange tab character:
+
+#+begin_src emacs-lisp
+(setq-default indent-tabs-mode nil)
+(prefer-coding-system 'utf-8)
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+#+end_src
+
+The other aspect of encoding is differing conventions around the
+line-endings between platforms. 
+
+#+begin_src emacs-lisp
+(defun unix-file ()
+  "Change the current buffer to Latin 1 with Unix line-ends."
+  (interactive)
+  (set-buffer-file-coding-system 'utf8-unix t))
+(defun dos-file ()
+  "Change the current buffer to Latin 1 with DOS line-ends."
+  (interactive)
+  (set-buffer-file-coding-system 'utf8-dos t))
+(defun mac-file ()
+  "Change the current buffer to Latin 1 with Mac line-ends."
+  (interactive)
+  (set-buffer-file-coding-system 'utf8-mac t))
+#+end_src
+
+Changing encodings to other types is achievable through emacs keys: ^X
+RET f.
+
+** Buffer navigation
+
+#+begin_src emacs-lisp
+(when (fboundp 'winner-mode)
+(require 'winner)
+(setq winner-dont-bind-my-keys t) ;; default bindings conflict with org-mode
+
+(global-set-key (kbd "<C-s-left>") 'winner-undo)
+(global-set-key (kbd "<C-s-right>") 'winner-redo)
+(winner-mode t) ;; turn on the global minor mode
+)
+(when (fboundp 'windmove-default-keybindings)
+  (windmove-default-keybindings))
+(when (fboundp 'ibuffer)
+  (global-set-key (kbd "C-x C-b") 'ibuffer)
+  (autoload 'ibuffer "ibuffer" "List buffers." t))
+
+(set-fringe-mode '(1 .  1))  
+
+(setq ido-enable-flex-matching t)
+(setq ido-show-dot-for-dired nil)
+(ido-mode 1)
+(ido-ubiquitous-mode 1)
+(define-key global-map (kbd "C-c SPC") 'ace-jump-mode)
+(global-subword-mode 1)
+(global-set-key (kbd "C-z") 'undo)
+(require 'uniquify)
+(fset 'yes-or-no-p 'y-or-n-p)
+
+(defun iwb ()
+  "indent whole buffer"
+  (interactive)
+  (delete-trailing-whitespace)
+  (indent-region (point-min) (point-max) nil)
+  (untabify (point-min) (point-max)))
+
+(global-set-key [(meta up)] 'move-line-up)
+(global-set-key [(meta down)] 'move-line-down)
+
+(defun move-line (&optional n)
+  "Move current line N (1) lines up/down leaving point in place."
+  (interactive "p")
+  (when (null n)
+    (setq n 1))
+  (let ((col (current-column)))
+    (beginning-of-line)
+    (next-line 1)
+    (transpose-lines n)
+    (previous-line 1)
+    (forward-char col)))
+
+(defun move-line-up (n)
+  "Moves current line N (1) lines up leaving point in place."
+  (interactive "p")
+  (move-line (if (null n) -1 (- n))))
+
+(defun move-line-down (n)
+  "Moves current line N (1) lines down leaving point in place."
+  (interactive "p")
+  (move-line (if (null n) 1 n)))
+
+(setq truncate-partial-width-windows nil)
+(setq default-truncate-lines nil)
+
+(setq
+ enable-recursive-minibuffers nil      ;;  don't allow mb cmds in the mb
+ max-mini-window-height 3              ;;  max 3 lines
+ minibuffer-scroll-window t            ;;  C-M-v scrolls....
+ resize-mini-windows t)
+ 
+#+end_src
+   
+** Presentations
+Sometimes during presentations and we need to change the font. We can
+define some conventional keys for changing the font pitch:
+
+#+begin_src emacs-lisp
+(define-key global-map (kbd "C-+") 'text-scale-increase)
+(define-key global-map (kbd "C--") 'text-scale-decrease)
+#+end_src
+
+
+** Setting for the Mac
+
+#+begin_src emacs-lisp
+(require 'exec-path-from-shell)
+(when (memq window-system '(mac ns))
+  (global-set-key (kbd "M-3") '(lambda () (interactive) (insert "#")))
+  (exec-path-from-shell-initialize)
+  (global-set-key (kbd "<f8>") 'mac-toggle-max-window))
+#+end_src
+
+** Setup for windows
+One of the issues that can loose emacs users is the copy and paste
+does not conform to the Windows conventional keys.  Although the keys
+can be rebound using ~cua~ this then makes some of the emacs
+keybindings unavailable or more error prone. Aquamacs suffers from
+this problem less, because the convention for cut and paste uses the
+command key, rather than the control key. A better compromise on
+window is to free up some of the other modifier keys available for use
+by emacs.  These are:
+  * Caps-lock
+  * The Application Key: which normally has a little menu on it
+  * The left and right windows keys
+Freeing up these keys as modifiers opens up far more keys for binding
+to custom functions as well as supporting some of the Windows
+conventions, albeit on the windows keys:
+
+#+begin_src emacs-lisp
+(when (string-equal system-type "windows-nt")
+    (setq win32-enable-caps-lock nil
+          win32-enable-num-lock nil
+          win32-apps-modifier 'hyper
+          win32-lwindow-modifier 'super
+          win32-rwindow-modifier 'super
+          win32-pass-lwindow-to-system nil
+          win32-pass-rwindow-to-system nil
+          
+          )
+    (define-key global-map [?\s-x] 'kill-region)
+    (define-key global-map [?\s-x] 'kill-ring-save)
+    (define-key global-map [?\s-x] 'yank)
+    )
+#+end_src 
+** Themes
+
+#+begin_src emacs-lisp
+(load-theme 'zenburn t)
+#+end_src
+** Backups
+Centralise backups
+
+#+begin_src emacs-lisp
+(defconst use-backup-dir t)
+
+(defvar user-temporary-file-directory
+  (concat "~/.emacs.d/" "tmp/"))
+
+(make-directory user-temporary-file-directory t)
+(setq backup-directory-alist
+      `(("." . ,user-temporary-file-directory) (,tramp-file-name-regexp nil))
+      version-control t        ; Use version numbers for backups
+      kept-new-versions 16     ; Number of newest versions to keep
+      kept-old-versions 2      ; Number of oldest versions to keep
+      delete-old-versions t    ; Ask to delete excess backup versions?
+      backup-by-copying-when-linked t) ; Copy linked files, don't rename.
+(setq auto-save-list-file-prefix
+      (concat user-temporary-file-directory ".auto-saves-"))
+(setq auto-save-file-name-transforms
+      `((".*" ,user-temporary-file-directory t)))
+
+#+end_src
+** Emacs Shell
+
+#+begin_src emacs-lisp
+(eval-after-load "em-term"
+  '(add-to-list 'eshell-visual-commands "git"))
+
+(eval-after-load "em-term"
+  '(add-to-list 'eshell-visual-commands "ssh"))
+#+end_src
+
+** World Time
+
+#+begin_src emacs-lisp
+(setq display-time-world-list '(
+                                ("GMT0BST" "London")
+                                ("CET-1CDT" "Paris")
+                                ("HKT" "Hong-Kong")
+                                ))
+
+#+end_src
+** Bookmarks
+
+#+begin_src emacs-lisp
+;;(require 'breadcrumb)
+;;(autoload 'bc-set               "breadcrumb" "Set bookmark in current point."   t)
+;;(autoload 'bc-previous          "breadcrumb" "Go to previous bookmark."         t)
+;;(autoload 'bc-next              "breadcrumb" "Go to next bookmark."             t)
+;;(autoload 'bc-local-previous    "breadcrumb" "Go to previous local bookmark."   t)
+;;(autoload 'bc-local-next        "breadcrumb" "Go to next local bookmark."       t)
+;;(autoload 'bc-goto-current      "breadcrumb" "Go to the current bookmark."      t)
+;;(autoload 'bc-list              "breadcrumb" "List all bookmarks in menu mode." t)
+;;(autoload 'bc-clear             "breadcrumb" "Clear all bookmarks."             t)
+
+
+(setq
+  bookmark-default-file (concat "~/.emacs.d/" "bookmarks")
+  bookmark-save-flag 1) ;; autosave each change
+#+end_src
+
+* Programming Lisps
+One of the reasons that I wanted to reconfigure my emacs settings this
+time round was the adoption of Clojure.  Clojure's tooling and
+community has driven some interesting development in the emacs
+community and is the most widely used editor in the community,
+although it now has stiff competition from both Cursive (Idea's plugin
+for clojure) and Lighttable. Emacs history support for lisp
+programming has been an advantage but there is a huge degree in the
+flexibility of support.  In other languages moving to emacs would
+sometimes mean sacificing some of the immedate feedback given by a
+more dedicated environment and the ability to apply semi-automatic
+refactoring.  For these two things at least, it's not the case for
+clojure. 
+Often what puts people off list is the brackets, besides the visual
+appeal this is perhaps the annoyance of having to get the to match
+up.  Here we use some packages to make this more intuitive.
+** Paredit
+Paredit changes the way that the standard movement keys work when in
+parenthesis. Using the arrow keys with different modifier keys
+manipulates the environment around the cursor in useful ways that
+avoids errorprone typing.  So splicing, joining and removing sexps
+becauses much easier. 
+
+#+begin_src emacs-lisp
+(require 'paredit)
+(add-hook 'lisp-mode-hook #'paredit-mode)
+(add-hook 'emacs-lisp-mode-hook #'paredit-mode)
+(add-hook 'clojure-mode-hook #'paredit-mode)
+(add-hook 'cider-repl-mode-hook #'paredit-mode)
+
+(with-eval-after-load 'eldoc
+  (eldoc-add-command 'paredit-backward-delete 'paredit-close-round))
+#+end_src
+
+** Highlight Sexp
+Besides ensuring when you edit an expression the right number of open
+and close braces are present the thing that is useful is to be able to
+quickly see if brackets match up. Emacs has a number of options for
+this.  Here we have selected to use the ~hl-sexp~ package which will
+/highlight/ the environment that the cursor is in.
+#+begin_src emacs-lisp
+;; hl-sexp: minor mode to highlight s-expression
+(require 'hl-sexp)
+
+(add-hook 'clojure-mode-hook #'hl-sexp-mode)
+(add-hook 'lisp-mode-hook #'hl-sexp-mode)
+(add-hook 'emacs-lisp-mode-hook #'hl-sexp-mode)
+#+end_src
+
+* Syntax Checking
+Syntax checking in emacs has evolved as there are different options
+depending on the language.  For clojure the best at the moment is
+~flycheck~.
+
+#+begin_src emacs-lisp
+
+(require 'flycheck)
+
+(eval-after-load 'flycheck '(flycheck-clojure-setup))
+
+(add-hook 'after-init-hook #'global-flycheck-mode)
+(eval-after-load 'flycheck
+  '(setq flycheck-display-errors-function #'flycheck-pos-tip-error-messages))
+
+#+end_src
+
+Here we enable flycheck for clojure but also use another feature that
+displays the flycheck errors in-buffer more like a Java IDE. Otherwise
+these errors would appear in the minibuffer obscuring other useful
+feeback from eldoc.
+
+** Clojure: Cider Configuration
+Cider is the clojure mode of choice. 
+#+begin_src emacs-lisp
+(setq cider-lein-command "~/bin/lein")
+
+;; REPL history file
+(setq cider-repl-history-file "~/.emacs.d/cider-history")
+
+;; nice pretty printing
+(setq cider-repl-use-pretty-printing t)
+
+;; nicer font lock in REPL
+(setq cider-repl-use-clojure-font-lock t)
+
+;; result prefix for the REPL
+(setq cider-repl-result-prefix ";; => ")
+
+;; never ending REPL history
+(setq cider-repl-wrap-history t)
+
+;; looong history
+(setq cider-repl-history-size 3000)
+
+;; eldoc for clojure
+(add-hook 'cider-mode-hook #'eldoc-mode)
+
+
+;; error buffer not popping up
+(setq cider-show-error-buffer nil)
+
+;; company mode for completion
+(add-hook 'cider-repl-mode-hook #'company-mode)
+(add-hook 'cider-mode-hook #'company-mode)
+
+(add-hook 'clojure-mode-hook
+	  (lambda ()
+	    (clj-refactor-mode 1)
+	    ;; insert keybinding setup here
+	    (cljr-add-keybindings-with-prefix "C-c RET")))
+
+(add-hook 'clojure-mode-hook #'yas-minor-mode)
+
+
+;; no auto sort
+(setq cljr-auto-sort-ns nil)
+
+;; do not prefer prefixes when using clean-ns
+(setq cljr-favor-prefix-notation nil)
+
+#+end_src
+
+** Autoinserting templates
+#+begin_src emacs-lisp
+(require 'autoinsert)
+(add-hook 'find-file-hook 'auto-insert)
+#+end_src
+* Haskell mode
+I've not used this haskell configuration much, it originates in a 10
+minute setup before a Haskell workshop at FPDays 2011 in the brief
+setup period in the class. 
+#+begin_src emacs-lisp
+(add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode)
+(add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
+(setq haskell-program-name "/usr/bin/ghci")
+#+end_src
+
+
+* Tweeting
+
+#+begin_src emacs-lisp
+(setq twittering-tinyurl-service 'goo.gl)
+;;(setq twittering-bitly-login "@andy_gavin")
+;;(setq twittering-bitly-api-key "")
+#+end_src
+
+* XML
+
+#+begin_src emacs-lisp
+(require 'nxml-mode)
+(require 'soap-client)
+(setq auto-mode-alist
+      (cons '("\\.\\(xml\\|xsl\\|rng\\|html\\|xhtml\\)\\'" . nxml-mode)
+      auto-mode-alist))
+
+(setq nxml-slash-auto-complete-flag t)
+;;(let (
+;;      (schema-dir (concat (config-get-module-dir "nxml") "schemas" ))
+;;      )
+;;  (add-to-list 'rng-schema-loader-alist '( "build.xml" . (concat schema-dir "/ant.rnc")))
+;;  )
+
+;;(if (and (iswindows) window-system)
+;;    (global-set-key [(super return)] 'nxml-complete)
+;;)
+(setq popcmp-group-alternatives t)
+
+(unify-8859-on-decoding-mode)
+
+(fset 'xml-mode 'nxml-mode)
+(fset 'sgml-mode 'nxml-mode)
+(fset 'html-mode 'nxml-mode)
+
+
+#+end_src
+
+* Org Mode
+
+Although we're using org-mode to read this file, it is a large package
+rich with organisational features. This needs work as org-capture
+replaced org-remember.
+
+#+begin_src emacs-lisp
+(require 'org)
+(require 'org-capture)
+(require 'org-compat)
+(require 'org-install)
+;;(require 'org-exp-blocks)
+(require 'org-feed)
+
+
+(setq org-default-notes-file (concat org-directory "/capture.org"))
+(define-key global-map "\C-cc" 'org-capture)
+
+
+(setq org-capture-templates
+      '(("t" "Todo" entry (file+headline (concat org-directory "/gtd.org") "Tasks")
+         "* TODO %?\n  %i\n  %a")
+        ("j" "Journal" entry (file+datetree (concat org-directory "/journal.org"))
+         "* %?\nEntered on %U\n  %i\n  %a")))
+
+(setq org-todo-keywords
+      '((sequence "TODO(t)" "|" "DONE(d)" "CANCELLED(c)")
+        (sequence "TASK(f)" "|" "DONE(d)")
+        (sequence "MAYBE(m)" "|" "CANCELLED(c)")))
+
+(setq org-todo-keyword-faces
+      '(("TODO" . (:foreground "DarkOrange1" :weight bold))
+        ("MAYBE" . (:foreground "sea green"))
+        ("DONE" . (:foreground "light sea green"))
+        ("CANCELLED" . (:foreground "forest green"))
+        ("TASK" . (:foreground "blue"))))
+
+;; org-mode support for languges allows #+BEGIN_SRC blocks
+(eval-after-load 'org-babel
+  (progn
+    (require 'ob-clojure)
+    (require 'ob-sh)
+    (require 'ob-dot)
+    (require 'ob-mscgen)
+    (require 'ob-sql)
+    (require 'ob-emacs-lisp)))
+
+(setq org-modules nil)
+;;(if (and (ismac) window-system)
+;;	 (add-to-list 'org-modules 'org-mac-iCal))
+
+;; (setq font-lock-maximum-decoration
+;;       '((org-mode . nil) (tex-mode . nil) (latex-mode . nil)))
+
+                                        ; (eval-after-load "tex-mode" '(fset 'tex-font-lock-suscript 'ignore))
+
+(defun org-insert-link-as-file ()
+  (interactive)
+  (let ((current-prefix-arg '(4)))
+    (call-interactively 'org-insert-link)))
+
+(add-hook 'org-load-hook
+            (lambda ()
+				  (define-key org-mode-map (kbd "C-c C-g") 'org-insert-link-as-file)
+				  (define-key org-mode-map [ (super t) ] 'org-table-create-or-convert-from-region)
+				  (define-key org-mode-map [ (super c) ] 'org-codeblock-region)))
+
+
+(setq org-export-with-sub-superscripts nil)
+; Inline images in HTML instead of producting links to the image
+(setq org-export-html-inline-images t)
+; Do not use sub or superscripts - I currently don't need this functionality in my documents
+(setq org-export-with-sub-superscripts nil)
+
+
+
+; Use org.css from the norang website for export document stylesheets
+;;(setq org-export-html-style-extra 
+;;		(concat "<style type=\"text/css\"><!--/*--><![CDATA[/*><!--*/\n" 
+;;				  (with-temp-buffer 
+;;					 (insert-file-contents "~/emacs.d/org-mode/local-export.css") 
+;;					 (buffer-string)
+;;					) 
+;;				  "\n /*]]>*/--></style>"))
+
+(setq org-export-html-style-include-default t)
+; Do not generate internal css formatting for HTML exports
+(setq org-export-htmlize-output-type (quote css))
+; Export with LaTeX fragments
+(setq org-export-with-LaTeX-fragments t)
+
+(setq org-return-follows-link t)
+(setq org-tab-follows-link t)
+
+
+(global-set-key "\C-cl" 'org-store-link)
+(global-set-key "\C-ca" 'org-agenda)
+(global-set-key "\C-cb" 'org-iswitchb)
+
+(setq org-todo-keywords (quote ((sequence "TODO(t!)" "STARTED(n!)" "|" "DONE(d!/!)")
+                                (sequence "HOLD(h@/!)" "SOMEDAY(s!)" "|" "CANCELLED(c@/!)")
+
+                                (sequence "OPEN(O!)" "|" "CLOSED(C!)"))))
+
+(setq org-todo-keyword-faces
+      (quote (("TODO"      :foreground "red"          :weight bold)
+              ("DONE"      :foreground "forest green" :weight bold)
+              ("HOLD"      :foreground "yellow"       :weight bold)
+              ("SOMEDAY"   :foreground "goldenrod"    :weight bold)
+              ("CANCELLED" :foreground "orangered"    :weight bold)
+              ("OPEN"      :foreground "magenta"      :weight bold)
+              ("CLOSED"    :foreground "forest green" :weight bold))))
+
+(setq org-agenda-files '( 
+(concat org-directory "/gtd.org") 
+(concat org-directory "/emacs.org") 
+(concat org-directory "/vs.org") 
+(concat org-directory "/tech.org")))
+
+(setq org-stuck-projects '( "HOLD|SOMEDAY|+SCHEDULED<\"<today>\"" ( "DONE" "CLOSED" "CANCELLED") nil "" ))
+;;(setq org-mobile-directory "~/Dropbox/MobileOrg/")
+;;(setq org-mobile-inbox-for-pull "~/org/inbox.txt")
+(setq org-archive-location (concat org-directory "/archive.org::Archive"))
+
+(setq org-default-notes-file (concat org-directory "/notes.org"))
+(setq org-special-ctrl-a/e t)
+(setq org-return-follows-link nil)
+(setq org-fast-tag-selection-single-key t)
+
+(setq org-tag-alist '(
+                      ("@home" . ?h)
+                      ("@office" . ?o)
+                      ("@phone" . ?p)
+                      ("crypt" . ?s)
+                      ("@toread" . ?r)
+                      ("personal" . ?x)))
+
+(setq org-log-done 'time)
+
+;;;;;;;;;;;;;;
+;; Remember ;;
+;;;;;;;;;;;;;;
+
+;;(org-remember-insinuate)
+;; Control-c is a problem for regions, so redefine some regional commands
+;; until we decide whether we should keep cua
+
+;;(global-set-key [ (super z) ] 'org-remember)
+
+;;(setq org-remember-templates
+;;      '(
+;;		  ("Story" ?s "* TODO %^{Title}\n  %i\n%?\n  %a" "~/org/vs.org" "Project Stories")
+;;		  ("Todo" ?t "* TODO %?\n  %i\n  %a" "~/org/gtd.org" "Todo List")
+;;        ("Issue" ?i "* OPEN %U %a %?\n  %i\n" "~/org/vs.org" "Issues")
+;;		  ("Emacs" ?e "* TODO %U %?\n  %i\n" "~/org/emacs.org" "Configuration")
+;;		  ("Research" ?r "* OPEN %u %^{Title} %a\n  %?\n  %i\n" "~/org/tech.org" "To Look Into")
+;;		  ))
+
+
+;; (require 'org-publish)
+;; (setq org-publish-project-alist
+;;       '(
+
+;;         ("org-notes"
+;;          :base-directory "~/org/"
+;;          :base-extension "txt"
+;;          :publishing-directory "~/Dropbox/Public/orgpub/"
+;;          :recursive t
+;;          :publishing-function org-publish-org-to-html
+;;          :headline-levels 4       ; Just the default for this project.
+;;          :auto-preamble t
+;;          )
+
+;;         ("org-base"
+;;          :static-directory "~/org/"
+;;          :base-extension "css\\|js\\|png\\|jpg\\|gif\\|pdf\\|mp3\\|ogg\\|swf"
+;;          :publishing-directory "~/Dropbox/Public/orgpub/"
+;;          :recursive t
+;;          :publishing-function org-publish-attachment
+;;          )
+
+;;         ("org" :components ("org-notes" "org-static"))
+
+;;         ))
+
+                                        ; Use IDO for target completion
+(setq org-completion-use-ido t)
+
+                                        ; Targets include this file and any file contributing to the agenda - up to 5 levels deep
+                                        ;(setq org-refile-targets (quote ((org-agenda-files :maxlevel . 5) (nil :maxlevel . 5))))
+                                        ;(setq org-refile-use-outline-path (quote file))
+                                        ;(setq org-outline-path-complete-in-steps t)
+
+(setq org-refile-use-outline-path nil)
+(setq org-refile-targets (quote ((org-agenda-files :level . 1))))
+;;(setq org-refile-targets '( (org-agenda-files :regexp . "Tasks") ))
+(setq org-outline-path-complete-in-steps nil)
+
+
+                                        ;ical integration
+(setq org-agenda-include-diary t)
+
+;; (setq org-agenda-custom-commands
+;;       '(("I" "Import diary from iCal" agenda ""
+;;          ((org-agenda-mode-hook
+;;            (lambda ()
+;;              (org-mac-iCal)))))))
+
+(defun org-codeblock-region (beg end &optional arg)
+  "Make code block in org mode"
+  (interactive "*r\nP")
+  (if (> beg end) (let (tmp) (setq tmp beg beg end end tmp)))
+  (save-excursion 
+	 (goto-char beg) (skip-chars-forward " \t\n\r") (insert "#+BEGIN_SRC\n")
+	 (setq end (+ end (length "#+BEGIN_SRC\n")))
+	 (goto-char end) (skip-chars-backward " \t\n\r") (insert "\n#+END_SRC"))
+  )
+
+(require 'org-crypt) 
+(setq org-crypt-key "Andrew Gavin")
+
+(org-crypt-use-before-save-magic)
+;;(setq org-tags-exclude-from-inheritance (quote ("crypt")))
+
+
+;; Add feeds here
+;; 
+(setq org-feed-alist
+      '(("Slashdot"
+         "http://rss.slashdot.org/Slashdot/slashdot"
+         "~/org/feeds.org" "Slashdot Entries")))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (org-set-local 'yas/trigger-key [tab])
+            (define-key yas/keymap [tab] 'yas/next-field-group)
+            ))
+
+(defvar org-journal-file "~/Documents/org/journal.org"  
+  "Path to OrgMode journal file.")  
+(defvar org-journal-date-format "%Y-%m-%d"  
+  "Date format string for journal headings.")  
+  
+(defun org-journal-entry ()  
+  "Create a new diary entry for today or append to an existing one."  
+  (interactive)  
+  (switch-to-buffer (find-file org-journal-file))  
+  (widen)  
+  (let ((today (format-time-string org-journal-date-format)))  
+    (beginning-of-buffer)  
+    (unless (org-goto-local-search-forward-headings today nil t)  
+      ((lambda ()   
+         (org-insert-heading)  
+         (insert today)  
+         (insert "\n\n  \n"))))  
+    (beginning-of-buffer)  
+    (org-show-entry)  
+    (org-narrow-to-subtree)  
+    (end-of-buffer)  
+    (backward-char 2)  
+    (unless (= (current-column) 2)  
+      (insert "\n\n  "))))
+
+#+end_src
+
+* EPA
+
+#+begin_src emacs-lisp
+;;(require 'epa-setup)
+
+;;(epa-file-enable)
+;;(setq epa-file-cache-passphrase-for-symmetric-encryption t)
+
+;;(setq config-private-loaded nil)
+;;(defun config-private-eval (p)
+;;  (unless config-private-loaded
+;;	 (load "~/private.gpg")
+;;	 (setq config-private-loaded t))
+;;  (eval p))
+
+#+end_src
+
+* Emacs client support
+
+Some applications require an editor or even some functions that emacs
+can supply.  Emacsclient instructs the existing emacs session to do
+this work, avoiding starting anothe emacs session.  To enable this we
+have to set the emacs instance up as a server.
+
+#+begin_src emacs-lisp
+(or (server-running-p) (server-start))
+#+end_src
+ 

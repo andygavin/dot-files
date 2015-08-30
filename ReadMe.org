@@ -1,0 +1,6 @@
+* Dot Files
+This repository is a refreshed version of my dot-files.  After years constantly reinventing my local configuration I'm using github as a central storage.
+
+** Emacs Configuration
+
+My emacs configuration uses ~org-babel~ to be [[file:.emacs.d/config.org][readable]].
