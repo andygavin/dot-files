@@ -83,6 +83,7 @@ Here we have also set where the package manager will place the installation of t
                         linum
                         ;; aggressive-indent
                         regex-tool
+                        world-time-mode
                         ) "Default packages")
 #+end_src
 
@@ -232,7 +233,15 @@ RET f.
  resize-mini-windows t)
  
 #+end_src
-   
+*** Smex   
+M-x enhancement to extend ido to the M-x function.  These are the keybindings frfrom the page: [[https://github.com/nonsequitur/smex/][Smex Github page]]
+#+begin_src emacs-lisp
+(global-set-key (kbd "M-x") 'smex)
+(global-set-key (kbd "M-X") 'smex-major-mode-commands)
+;; This is your old M-x.
+(global-set-key (kbd "C-c C-c M-x") 'execute-extended-command) 
+#+end_src
+
 ** Presentations
 Sometimes during presentations and we need to change the font. We can
 define some conventional keys for changing the font pitch:
@@ -545,7 +554,9 @@ replaced org-remember.
 
 (setq org-default-notes-file (concat org-directory "/capture.org"))
 (define-key global-map "\C-cc" 'org-capture)
-
+(add-hook 'org-mode-hook
+          (lambda ()
+            (writegood-mode)))
 
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline (concat org-directory "/gtd.org") "Tasks")
