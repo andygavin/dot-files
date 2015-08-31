@@ -11,7 +11,7 @@ To enable this we still will need to bootstrap ~org-babel~ this is done using:
 #+begin_src emacs-lisp  :tangle no
 (require 'package)
 (require 'org)
-(org-babel-load-file "~/.emacs.d/init.org")
+(org-babel-load-file "~/.emacs.d/config.org")
 #+END_SRC
 
 The bootstrap is placed in the ~.emacs.d/init.el~ file, this file is the file that is normally loaded by emacs on startup\mdash a more modern version of the old ~.emacs~ file.  Aquamacs, however, has a slightly modified configuration system where, should the built-in preferences be used, I've found only the ~.emacs~ file is read. To avoid this I'm exclusively configuring it as I do other emacsen: via these files alone.
@@ -84,6 +84,7 @@ Here we have also set where the package manager will place the installation of t
                         ;; aggressive-indent
                         regex-tool
                         world-time-mode
+                        perl-completion
                         ) "Default packages")
 #+end_src
 
@@ -234,7 +235,7 @@ RET f.
  
 #+end_src
 *** Smex   
-M-x enhancement to extend ido to the M-x function.  These are the keybindings frfrom the page: [[https://github.com/nonsequitur/smex/][Smex Github page]]
+@@html:<kbd>M-x</kbd>@@ enhancement to extend ido to the M-x function.  These are the keybindings frfrom the page: [[https://github.com/nonsequitur/smex/][Smex Github page]]
 #+begin_src emacs-lisp
 (global-set-key (kbd "M-x") 'smex)
 (global-set-key (kbd "M-X") 'smex-major-mode-commands)
@@ -306,7 +307,7 @@ Centralise backups
 (defconst use-backup-dir t)
 
 (defvar user-temporary-file-directory
-  (concat "~/.emacs.d/" "tmp/"))
+  (concat user-emacs-directory "tmp/"))
 
 (make-directory user-temporary-file-directory t)
 (setq backup-directory-alist
@@ -357,7 +358,7 @@ Centralise backups
 
 
 (setq
-  bookmark-default-file (concat "~/.emacs.d/" "bookmarks")
+  bookmark-default-file (concat user-emacs-directory "bookmarks")
   bookmark-save-flag 1) ;; autosave each change
 #+end_src
 
@@ -438,7 +439,7 @@ Cider is the clojure mode of choice.
 (setq cider-lein-command "~/bin/lein")
 
 ;; REPL history file
-(setq cider-repl-history-file "~/.emacs.d/cider-history")
+(setq cider-repl-history-file (concat user-emacs-directory "/cider-history")
 
 ;; nice pretty printing
 (setq cider-repl-use-pretty-printing t)
@@ -488,6 +489,14 @@ Cider is the clojure mode of choice.
 (require 'autoinsert)
 (add-hook 'find-file-hook 'auto-insert)
 #+end_src
+
+* Perl Development
+
+#+begin_src emacs-lisp
+(add-to-list 'load-path (concat user-emacs-directory "/pde/")
+(load 'pde-load)
+#+end_src
+
 * Haskell mode
 I've not used this haskell configuration much, it originates in a 10
 minute setup before a Haskell workshop at FPDays 2011 in the brief
@@ -604,7 +613,9 @@ replaced org-remember.
             (lambda ()
 				  (define-key org-mode-map (kbd "C-c C-g") 'org-insert-link-as-file)
 				  (define-key org-mode-map [ (super t) ] 'org-table-create-or-convert-from-region)
-				  (define-key org-mode-map [ (super c) ] 'org-codeblock-region)))
+				  (define-key org-mode-map [ (super c) ] 'org-codeblock-region)
+               (setq org-startup-indented t
+                     org-hide-leading-stars t)))
 
 
 (setq org-export-with-sub-superscripts nil)
