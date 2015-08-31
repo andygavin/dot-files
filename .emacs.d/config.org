@@ -11,11 +11,14 @@ To enable this we still will need to bootstrap ~org-babel~ this is done using:
 #+begin_src emacs-lisp  :tangle no
 (require 'package)
 (require 'org)
+(defconst init/emacsd "~/.emacs.d/")
 (org-babel-load-file "~/.emacs.d/config.org")
 #+END_SRC
 
 The bootstrap is placed in the ~.emacs.d/init.el~ file, this file is the file that is normally loaded by emacs on startup\mdash a more modern version of the old ~.emacs~ file.  Aquamacs, however, has a slightly modified configuration system where, should the built-in preferences be used, I've found only the ~.emacs~ file is read. To avoid this I'm exclusively configuring it as I do other emacsen: via these files alone.
- 
+
+As I'm using aquamacs on the mac, I'm setting a constant for the ~~/.emacs.d/init.el~ directory. 
+
 ** Initial Setup
 
 There are a few things we want to do early to clean up the window.  For graphical versions of emacs they often have toolbars and menus.  We turn these off early to avoid them from appearing then disappearing.  Each of these is guarded by a predicate to ensure that the parameter exists in the environment:
@@ -35,8 +38,8 @@ To assume the least about the what has been shipped with the version of emacs we
              '("melpa-stable" . "http://stable.melpa.org/packages/") t)
 (add-to-list 'package-archives
              '("melpa" . "http://melpa.org/packages/") t)
-(setq package-user-dir (concat user-emacs-directory "elpa"))
-(add-to-list 'load-path (concat user-emacs-directory "site-lisp"))
+(setq package-user-dir (concat init/emacsd "elpa"))
+(add-to-list 'load-path (concat init/emacsd "site-lisp"))
 #+end_src
 
 Here we have also set where the package manager will place the installation of the packages, and an area for custom lisp ~site-lisp~. The packages we want to ensure we have are:
@@ -85,10 +88,13 @@ Here we have also set where the package manager will place the installation of t
                         regex-tool
                         world-time-mode
                         perl-completion
+                        polymode
                         ) "Default packages")
 #+end_src
 
 To ensure these packages are loaded lets define a couple of functions. One which ensures as single package is installed, the other which takes a list and handles any loading errors.
+
+elisp
 
 #+begin_src emacs-lisp
 (defun ensure-package-installed (package &optional min-version no-refresh)
@@ -307,7 +313,7 @@ Centralise backups
 (defconst use-backup-dir t)
 
 (defvar user-temporary-file-directory
-  (concat user-emacs-directory "tmp/"))
+  (concat init/emacsd "tmp/"))
 
 (make-directory user-temporary-file-directory t)
 (setq backup-directory-alist
@@ -358,9 +364,29 @@ Centralise backups
 
 
 (setq
-  bookmark-default-file (concat user-emacs-directory "bookmarks")
+  bookmark-default-file (concat init/emacsd "bookmarks")
   bookmark-save-flag 1) ;; autosave each change
 #+end_src
+
+** Completion
+We use the yasnippet templating engine to provide template, but this
+is provided through company mode to provide greater flexabilty, which
+provides other backends including finding words in the current buffer.
+
+
+
+#+begin_src emacs-lisp
+
+(add-hook 'org-mode
+            (lambda ()
+              (company-mode)
+              (set (make-local-variable 'company-backends)
+                   '((company-dabbrev-code company-gtags company-etags company-keywords
+                      company-files company-dabbrev company-yasnippet)))))
+#+end_src
+
+
+
 
 * Programming Lisps
 One of the reasons that I wanted to reconfigure my emacs settings this
@@ -439,7 +465,7 @@ Cider is the clojure mode of choice.
 (setq cider-lein-command "~/bin/lein")
 
 ;; REPL history file
-(setq cider-repl-history-file (concat user-emacs-directory "/cider-history")
+(setq cider-repl-history-file (concat init/emacsd "/cider-history"))
 
 ;; nice pretty printing
 (setq cider-repl-use-pretty-printing t)
@@ -489,12 +515,12 @@ Cider is the clojure mode of choice.
 (require 'autoinsert)
 (add-hook 'find-file-hook 'auto-insert)
 #+end_src
-
+   
 * Perl Development
 
 #+begin_src emacs-lisp
-(add-to-list 'load-path (concat user-emacs-directory "/pde/")
-(load 'pde-load)
+(add-to-list 'load-path (concat init/emacsd "/pde/lisp/"))
+(load "pde-load")
 #+end_src
 
 * Haskell mode
@@ -559,8 +585,29 @@ replaced org-remember.
 (require 'org-install)
 ;;(require 'org-exp-blocks)
 (require 'org-feed)
+#+end_src
 
+** Literate programming in org-mode
 
+Org-babel provides the ability to write literate programming, as this
+file.  However syntax hilighting and other support from programming
+modes isn't there.  Making the experience a poorer version editing
+dedicated source files.  There have been some attempts to mix modes
+with org-mode to allow for switching in the same buffer. I tried poly
+mode:
+
+#+begin_src emacs-lisp :tangle no
+(require 'polymode)
+(require 'poly-org)
+
+(add-to-list 'auto-mode-alist '("\\.org" . poly-org-mode))
+#+end_src
+
+This does not work as it attempts to give the buffer two major modes using indirect buffers.  Instead I'll look at outshine https://github.com/tj64/outshine and outorg https://github.com/tj64/outorg which apparently gives views onto the literate org files.
+
+** Capturing notes
+
+#+begin_src emacs-lisp
 (setq org-default-notes-file (concat org-directory "/capture.org"))
 (define-key global-map "\C-cc" 'org-capture)
 (add-hook 'org-mode-hook
