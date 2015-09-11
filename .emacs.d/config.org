@@ -313,13 +313,13 @@ conventions, albeit on the windows keys:
 
 #+begin_src emacs-lisp
 (when (string-equal system-type "windows-nt")
-    (setq win32-enable-caps-lock nil
-          win32-enable-num-lock nil
-          win32-apps-modifier 'hyper
-          win32-lwindow-modifier 'super
-          win32-rwindow-modifier 'super
-          win32-pass-lwindow-to-system nil
-          win32-pass-rwindow-to-system nil
+    (setq w32-enable-caps-lock nil
+          w32-enable-num-lock nil
+          w32-apps-modifier 'hyper
+          w32-lwindow-modifier 'super
+          w32-rwindow-modifier 'super
+          w32-pass-lwindow-to-system nil
+          w32-pass-rwindow-to-system nil
           
           )
     (define-key global-map [?\s-x] 'kill-region)
