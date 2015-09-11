@@ -681,13 +681,16 @@ This does not work as it attempts to give the buffer two major modes using indir
 
 ;; org-mode support for languges allows #+BEGIN_SRC blocks
 (eval-after-load 'org-babel
-  (progn
-    (require 'ob-clojure)
-    (require 'ob-sh)
-    (require 'ob-dot)
-    (require 'ob-mscgen)
-    (require 'ob-sql)
-    (require 'ob-emacs-lisp)))
+  (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((clojure . t)
+       (sh . t)
+       (dot . t)
+       (mscgen . t) ;; message seq charts
+       (sql . t)
+       (calc . t)
+       (emacs-lisp . t)
+       (plantuml . t)))
 
 (setq org-modules nil)
 ;;(if (and (ismac) window-system)
