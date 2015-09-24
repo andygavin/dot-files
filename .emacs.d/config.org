@@ -82,7 +82,7 @@ Here we have also set where the package manager will place the installation of t
                         s
                         epg
                         twittering-mode
-                        ;;                        sqlplus
+                        sqlplus
                         linum
                         ;; aggressive-indent
                         regex-tool
@@ -91,6 +91,7 @@ Here we have also set where the package manager will place the installation of t
                         polymode
                         rust-mode
                         flycheck-rust
+                        plsql
                         ) "Default packages")
 #+end_src
 
@@ -577,7 +578,19 @@ setup period in the class.
 (setq haskell-program-name "/usr/bin/ghci")
 #+end_src
 
+* Oracle Development
+Occasionally work has meant I will do some pl/sql development, and the
+development of stored procedures. To facilitiate this emacs has some
+support for developing stored procedure blocks with the ~plsql-mode~.
+Although this is quite old and somewhat buggy, it still helps with
+layout.  Here we use the recommended suffixes to open sql in the plsql mode.
 
+#+begin_src emacs-lisp
+(setq auto-mode-alist
+          (append
+           '(("\\.\\(p\\(?:k[bg]\\|ls\\)\\|sql\\)\\'" . plsql-mode))
+ auto-mode-alist))
+#+end_src 
 * Tweeting
 
 #+begin_src emacs-lisp
@@ -619,8 +632,8 @@ setup period in the class.
 * Org Mode
 
 Although we're using org-mode to read this file, it is a large package
-rich with organisational features. This needs work as org-capture
-replaced org-remember.
+rich with organisational features. 
+
 
 #+begin_src emacs-lisp
 (require 'org)
@@ -665,7 +678,9 @@ This does not work as it attempts to give the buffer two major modes using indir
          "* TODO %?\n  %i\n  %a")
         ("j" "Journal" entry (file+datetree ,(concat org-directory "/journal.org"))
          "* %?\nEntered on %U\n  %i\n  %a")
-        ("b" "Bibtex Capture" entry (file ,(concat org-directory "/readingList.org")) "* READ %?\n\n%a\n\n%:author (%:year): %:title\n In %:journal, %:pages.")))
+        ("b" "Article Capture" entry (file+olp ,(concat org-directory "/readingList.org"))
+        (file ,(concat init/emacsd "templates/reading.org"))
+        :prepend t)))
 
 (setq org-todo-keywords
       '((sequence "TODO(t)" "|" "DONE(d)" "CANCELLED(c)")
@@ -691,6 +706,9 @@ This does not work as it attempts to give the buffer two major modes using indir
        (calc . t)
        (emacs-lisp . t)
        (plantuml . t)))
+
+(setq org-plantuml-jar-path
+      (expand-file-name (concat init/emacsd "/libs/plantuml.jar")))
 
 (setq org-modules nil)
 ;;(if (and (ismac) window-system)
@@ -760,11 +778,9 @@ This does not work as it attempts to give the buffer two major modes using indir
               ("OPEN"      :foreground "magenta"      :weight bold)
               ("CLOSED"    :foreground "forest green" :weight bold))))
 
-;;(setq org-agenda-files '( 
-;;(concat org-directory "/gtd.org") 
-;;(concat org-directory "/emacs.org") 
-;;(concat org-directory "/vs.org") 
-;;(concat org-directory "/tech.org")))
+(setq org-agenda-files `( 
+  ,(concat org-directory "/gtd.org") 
+  ,(concat org-directory "/tech.org")))
 
 (setq org-stuck-projects '( "HOLD|SOMEDAY|+SCHEDULED<\"<today>\"" ( "DONE" "CLOSED" "CANCELLED") nil "" ))
 ;;(setq org-mobile-directory "~/Dropbox/MobileOrg/")
@@ -853,8 +869,7 @@ This does not work as it attempts to give the buffer two major modes using indir
             (yas-minor-mode)
             (set (make-local-variable 'company-backends)
                '((company-dabbrev-code company-gtags company-etags company-keywords
-                  company-files company-dabbrev company-yasnippet)))
-            ))
+                  company-files company-dabbrev company-yasnippet)))))
 
 
 (defvar org-journal-file "~/Documents/org/journal.org"  

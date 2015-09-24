@@ -1,0 +1,5 @@
+** %^{Todo state|FIND|PRINT|READ|NOTES} [#%^{Priority|A|B|C}] %^{Description|Reading} %^g
+   %^{TITLE}p %^{AUTHOR}p %^{AREA}p %?
+   :PROPERTIES:
+   :Entered: %U
+   :END:
