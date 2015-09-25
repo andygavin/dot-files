@@ -705,19 +705,16 @@ This does not work as it attempts to give the buffer two major modes using indir
        (sql . t)
        (calc . t)
        (emacs-lisp . t)
-       (plantuml . t)))
+       (plantuml . t)
+       (ditaa . t))))
 
 (setq org-plantuml-jar-path
       (expand-file-name (concat init/emacsd "/libs/plantuml.jar")))
 
+(setq org-ditaa-jar-path
+      (expand-file-name (concat init/emacsd "/libs/ditaa0_9.jar")))
+
 (setq org-modules nil)
-;;(if (and (ismac) window-system)
-;;	 (add-to-list 'org-modules 'org-mac-iCal))
-
-;; (setq font-lock-maximum-decoration
-;;       '((org-mode . nil) (tex-mode . nil) (latex-mode . nil)))
-
-                                        ; (eval-after-load "tex-mode" '(fset 'tex-font-lock-suscript 'ignore))
 
 (defun org-insert-link-as-file ()
   (interactive)
@@ -740,15 +737,6 @@ This does not work as it attempts to give the buffer two major modes using indir
 (setq org-export-with-sub-superscripts nil)
 
 
-
-; Use org.css from the norang website for export document stylesheets
-;;(setq org-export-html-style-extra 
-;;		(concat "<style type=\"text/css\"><!--/*--><![CDATA[/*><!--*/\n" 
-;;				  (with-temp-buffer 
-;;					 (insert-file-contents "~/emacs.d/org-mode/local-export.css") 
-;;					 (buffer-string)
-;;					) 
-;;				  "\n /*]]>*/--></style>"))
 
 (setq org-export-html-style-include-default t)
 ; Do not generate internal css formatting for HTML exports
@@ -802,16 +790,6 @@ This does not work as it attempts to give the buffer two major modes using indir
 
 (setq org-log-done 'time)
 
-;;;;;;;;;;;;;;
-;; Remember ;;
-;;;;;;;;;;;;;;
-
-;;(org-remember-insinuate)
-;; Control-c is a problem for regions, so redefine some regional commands
-;; until we decide whether we should keep cua
-
-;;(global-set-key [ (super z) ] 'org-remember)
-
 
                                         ; Use IDO for target completion
 (setq org-completion-use-ido t)
@@ -830,21 +808,6 @@ This does not work as it attempts to give the buffer two major modes using indir
                                         ;ical integration
 (setq org-agenda-include-diary t)
 
-;; (setq org-agenda-custom-commands
-;;       '(("I" "Import diary from iCal" agenda ""
-;;          ((org-agenda-mode-hook
-;;            (lambda ()
-;;              (org-mac-iCal)))))))
-
-(defun org-codeblock-region (beg end &optional arg)
-  "Make code block in org mode"
-  (interactive "*r\nP")
-  (if (> beg end) (let (tmp) (setq tmp beg beg end end tmp)))
-  (save-excursion 
-	 (goto-char beg) (skip-chars-forward " \t\n\r") (insert "#+BEGIN_SRC\n")
-	 (setq end (+ end (length "#+BEGIN_SRC\n")))
-	 (goto-char end) (skip-chars-backward " \t\n\r") (insert "\n#+END_SRC"))
-  )
 
 (require 'org-crypt) 
 (setq org-crypt-key "Andrew Gavin")
