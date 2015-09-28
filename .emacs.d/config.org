@@ -1,10 +1,30 @@
 * Introduction
-The number of times I've started emacs configuration from scratch is at least the number of places I've worked multiplied by two.  There's no single reason for starting again, but besides commerical restrictions on what you can take with you, I've found that my configuration can often be an number of hacks that evolved to solve problems at particular times. When emacs is upgraded or I move the effort doesn't seem worth it to work out what I intended previously and I throw something together to meet the job in hand.
+The number of times I've started emacs configuration from scratch is
+at least the number of places I've worked multiplied by two.  There's
+no single reason for starting again, but besides commerical
+restrictions on what you can take with you, I've found that my
+configuration can often be an number of hacks that evolved to solve
+problems at particular times. When emacs is upgraded or I move the
+effort doesn't seem worth it to work out what I intended previously
+and I throw something together to meet the job in hand.
 
-So this is a different approach, which had greater scope for structuring the intialisation parameters with an explaination of why I did it at the time.
+So this is a different approach, which had greater scope for
+structuring the intialisation parameters with an explaination of why I
+did it at the time.
+
 
 ** Typical Emacs Configuration
-Typical emacs configuration does not have to be this way.  You would normally find in people's ~.emacs~ file and ~.emacs.d/~ directory a collections of .el files which are the Emacs Lisp configuration for the editor. This configuration is inspired by a number of configurations on the internet, that use org-mode's babel package to literately write the configuration.  This package will extract the configuration from this documentation and optionally compile it.  This configuration is unlikely to work on earlier versions of emacs that don't have the emacs package manager, or a relavtively recent version of org-mode.  It would be possible to modify it to use local versions of these things and load them in the bootstrap.  
+Typical emacs configuration does not have to be this way.  You would
+normally find in people's ~.emacs~ file and ~.emacs.d/~ directory a
+collections of .el files which are the Emacs Lisp configuration for
+the editor. This configuration is inspired by a number of
+configurations on the internet, that use org-mode's babel package to
+literately write the configuration.  This package will extract the
+configuration from this documentation and optionally compile it.  This
+configuration is unlikely to work on earlier versions of emacs that
+don't have the emacs package manager, or a relavtively recent version
+of org-mode.  It would be possible to modify it to use local versions
+of these things and load them in the bootstrap.
 
 To enable this we still will need to bootstrap ~org-babel~ this is done using:
 
@@ -15,9 +35,16 @@ To enable this we still will need to bootstrap ~org-babel~ this is done using:
 (org-babel-load-file "~/.emacs.d/config.org")
 #+END_SRC
 
-The bootstrap is placed in the ~.emacs.d/init.el~ file, this file is the file that is normally loaded by emacs on startup\mdash a more modern version of the old ~.emacs~ file.  Aquamacs, however, has a slightly modified configuration system where, should the built-in preferences be used, I've found only the ~.emacs~ file is read. To avoid this I'm exclusively configuring it as I do other emacsen: via these files alone.
+The bootstrap is placed in the ~.emacs.d/init.el~ file, this file is
+the file that is normally loaded by emacs on startup\mdash a more
+modern version of the old ~.emacs~ file.  Aquamacs, however, has a
+slightly modified configuration system where, should the built-in
+preferences be used, I've found only the ~.emacs~ file is read. To
+avoid this I'm exclusively configuring it as I do other emacsen: via
+these files alone.
 
-As I'm using aquamacs on the mac, I'm setting a constant for the ~~/.emacs.d/init.el~ directory. 
+As I'm using aquamacs on the mac, I'm setting a constant for the
+~~/.emacs.d/init.el~ directory.
 
 ** Initial Setup
 
@@ -31,7 +58,10 @@ There are a few things we want to do early to clean up the window.  For graphica
 #+end_src
 
 ** Ensure we have the packages we want
-To assume the least about the what has been shipped with the version of emacs we have we will use the now standard package manager.  First we will set up some decent well known repositories, these are used in order. We assume that emacs includes the its default.
+To assume the least about the what has been shipped with the version
+of emacs we have we will use the now standard package manager.  First
+we will set up some decent well known repositories, these are used in
+order. We assume that emacs includes the its default.
 
 #+begin_src emacs-lisp
 (add-to-list 'package-archives
@@ -42,7 +72,9 @@ To assume the least about the what has been shipped with the version of emacs we
 (add-to-list 'load-path (concat init/emacsd "site-lisp"))
 #+end_src
 
-Here we have also set where the package manager will place the installation of the packages, and an area for custom lisp ~site-lisp~. The packages we want to ensure we have are:
+Here we have also set where the package manager will place the
+installation of the packages, and an area for custom lisp
+~site-lisp~. The packages we want to ensure we have are:
 
 #+begin_src emacs-lisp
 (defvar init/packages '(
@@ -135,6 +167,37 @@ Before we start setting up different modes for specific operations and
 languages first we'll set up some global settings and try and
 normalise the settings across different platforms.
 
+** Whitespace
+Tabs are an acryonism, left over from an age of teletype printers.  We
+want spaces instead, and a lot less than eight characters.  W
+#+begin_src emacs-lisp
+(setq-default indent-tabs-mode nil
+              tab-width 4)
+
+#+end_src
+
+
+We also turn on whitespace visualisation for most modes, using the
+white-space mode. We're using it to avoid the use of tabs and
+highlight end-of-line whitespace.
+#+begin_src emacs-lisp
+(whitespace-mode 1)
+(setq whitespace-style '(indentation::space
+                         space-after-tab
+                         space-before-tab
+                         trailing
+                         lines-tail
+                         tab-mark
+                         face
+                         tabs))
+#+end_src
+I don't think we ever have a mode where we care about trailing
+whitespace so we'll get the editor to tidy it up.
+
+#+begin_src emacs-lisp
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+#+end_src
+
 ** Encoding
 Most environments I work on now are 8-bit clean. Emacs interaction
 with the clipboards in these environments default to UTF-8 and
@@ -143,15 +206,13 @@ UTF-8.  So we're setting our default encoding, and avoiding the
 strange tab character:
 
 #+begin_src emacs-lisp
-(setq-default indent-tabs-mode nil)
-(prefer-coding-system 'utf-8)
 (set-default-coding-systems 'utf-8)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 #+end_src
 
 The other aspect of encoding is differing conventions around the
-line-endings between platforms. 
+line-endings between platforms.
 
 #+begin_src emacs-lisp
 (defun unix-file ()
@@ -172,6 +233,8 @@ Changing encodings to other types is achievable through emacs keys: ^X
 RET f.
 
 ** Buffer navigation
+Winner mode is for recoving windows layouts, still need to fix this
+for aquamacs.
 
 #+begin_src emacs-lisp
 (when (fboundp 'winner-mode)
@@ -188,7 +251,7 @@ RET f.
   (global-set-key (kbd "C-x C-b") 'ibuffer)
   (autoload 'ibuffer "ibuffer" "List buffers." t))
 
-(set-fringe-mode '(1 .  1))  
+(set-fringe-mode '(1 .  1))
 
 (setq ido-enable-flex-matching t)
 (setq ido-show-dot-for-dired nil)
@@ -240,15 +303,15 @@ RET f.
  max-mini-window-height 3              ;;  max 3 lines
  minibuffer-scroll-window t            ;;  C-M-v scrolls....
  resize-mini-windows t)
- 
+
 #+end_src
-*** Smex   
+*** Smex
 @@html:<kbd>M-x</kbd>@@ enhancement to extend ido to the M-x function.  These are the keybindings frfrom the page: [[https://github.com/nonsequitur/smex/][Smex Github page]]
 #+begin_src emacs-lisp
 (global-set-key (kbd "M-x") 'smex)
 (global-set-key (kbd "M-X") 'smex-major-mode-commands)
 ;; This is your old M-x.
-(global-set-key (kbd "C-c C-c M-x") 'execute-extended-command) 
+(global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 #+end_src
 
 ** Presentations
@@ -267,7 +330,7 @@ Org-mode does export to latex's beamer package to create slides.  This
 is configurable entirely from the file itself.  However here we set
 our preferred style.
 
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
 (setq org-beamer-theme "CambridgeUS")
 #+end_src
 
@@ -283,7 +346,7 @@ At the moment I'm prefering the following presentation options.
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
 
-#+COLUMNS: %20ITEM %13BEAMER_env(Env) %6BEAMER_envargs(Args) %4BEAMER_col(Col) %7BEAMER_extra(Extra)        
+#+COLUMNS: %20ITEM %13BEAMER_env(Env) %6BEAMER_envargs(Args) %4BEAMER_col(Col) %7BEAMER_extra(Extra)
 #+end_example
 
 ** Setting for the Mac
@@ -321,16 +384,17 @@ conventions, albeit on the windows keys:
           w32-rwindow-modifier 'super
           w32-pass-lwindow-to-system nil
           w32-pass-rwindow-to-system nil
-          
+
           )
     (define-key global-map [?\s-x] 'kill-region)
     (define-key global-map [?\s-x] 'kill-ring-save)
     (define-key global-map [?\s-x] 'yank)
     )
-#+end_src 
+#+end_src
 ** Themes
 
 #+begin_src emacs-lisp
+(color-theme-initialize)
 (load-theme 'zenburn t)
 #+end_src
 ** Backups
@@ -338,7 +402,7 @@ I'd prefer not to place backups in the current directory when saving
 files.  Emacs provides a facility to place the backups of files edited
 and the autosave files in a different directory.  Here we're backing
 up and autosaving all files edited into a single backup directory.
- 
+
 #+begin_src emacs-lisp
 (defvar user-temporary-file-directory
   (concat init/emacsd "tmp/"))
@@ -359,7 +423,7 @@ up and autosaving all files edited into a single backup directory.
 #+end_src
 ** Emacs Shell
 It's possible to configure some commands in the emacs shell to produce
-their results in another buffer by setting ~eshell-visual-commands~. 
+their results in another buffer by setting ~eshell-visual-commands~.
 #+begin_src emacs-lisp
 (eval-after-load "em-term"
   '(progn
@@ -424,7 +488,7 @@ flexibility of support.  In other languages moving to emacs would
 sometimes mean sacificing some of the immedate feedback given by a
 more dedicated environment and the ability to apply semi-automatic
 refactoring.  For these two things at least, it's not the case for
-clojure. 
+clojure.
 Often what puts people off list is the brackets, besides the visual
 appeal this is perhaps the annoyance of having to get the to match
 up.  Here we use some packages to make this more intuitive.
@@ -433,7 +497,7 @@ Paredit changes the way that the standard movement keys work when in
 parenthesis. Using the arrow keys with different modifier keys
 manipulates the environment around the cursor in useful ways that
 avoids errorprone typing.  So splicing, joining and removing sexps
-becauses much easier. 
+becauses much easier.
 
 #+begin_src emacs-lisp
 (require 'paredit)
@@ -485,10 +549,10 @@ feeback from eldoc.
 
 ** Clojure: Cider Configuration
 Cider is the clojure mode of choice. First we set up lein and our
-preferences for the REPL. 
+preferences for the REPL.
 #+begin_src emacs-lisp
 (setq cider-lein-command "~/bin/lein"
-      cider-repl-history-file (concat init/emacsd "/cider-history") 
+      cider-repl-history-file (concat init/emacsd "/cider-history")
       cider-repl-use-pretty-printing t
       cider-repl-use-clojure-font-lock t
       cider-repl-result-prefix ";; => "
@@ -503,7 +567,7 @@ electing to not show the error buffer when there is a cider-stack
 trace.  The error will be available in the background should we need
 to userstand what has happened.
 
-Refactoring in enabled and bound to a key. 
+Refactoring in enabled and bound to a key.
 
 #+begin_src emacs-lisp
 ;; eldoc for clojure
@@ -539,14 +603,14 @@ content into the buffer when the file is new
 (require 'autoinsert)
 (add-hook 'find-file-hook 'auto-insert)
 #+end_src
-   
+
 * Perl Development
 
 Occasionally I still use perl for where bash doesn't cut it.  I've
 used it enough over the years for it to be useful for the odd bit of
 bit of generation, file manipulation or build scripting. This is quite
 close to it's original purpose for extracting and reporting over large
-datasets. It still seems good for the quick and ad-hoc. 
+datasets. It still seems good for the quick and ad-hoc.
 
 CPerl is a pretty good ide for perl, it gives in edit feedback on
 where you have got to.
@@ -558,8 +622,9 @@ where you have got to.
 #+end_src
 
 * Rust
+
 Rust looks to be a promising language, with some innovative features.  Many say that it's up
-against Go as a more modern system language, but still suffers from breaking language changes. 
+against Go as a more modern system language, but still suffers from breaking language changes.
 
 #+begin_src emacs-lisp
 (add-to-list 'auto-mode-alist '("\\.rs\\'" . rust-mode))
@@ -571,7 +636,8 @@ I've yet to look at racer to improve the link to the rust documentation.
 * Haskell mode
 I've not used this haskell configuration much, it originates in a 10
 minute setup before a Haskell workshop at FPDays 2011 in the brief
-setup period in the class. 
+setup period in the class.  Because of the install path this only
+works on my macbook for the moment.
 #+begin_src emacs-lisp
 (add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode)
 (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
@@ -590,9 +656,10 @@ layout.  Here we use the recommended suffixes to open sql in the plsql mode.
           (append
            '(("\\.\\(p\\(?:k[bg]\\|ls\\)\\|sql\\)\\'" . plsql-mode))
  auto-mode-alist))
-#+end_src 
+#+end_src
 * Tweeting
-
+I've never been a great tweeter, but occasionally I've used emacs as
+my twitter-client.
 #+begin_src emacs-lisp
 (setq twittering-tinyurl-service 'goo.gl)
 ;;(setq twittering-bitly-login "@andy_gavin")
@@ -632,18 +699,38 @@ layout.  Here we use the recommended suffixes to open sql in the plsql mode.
 * Org Mode
 
 Although we're using org-mode to read this file, it is a large package
-rich with organisational features. 
-
+rich with organisational features. Here we are loading:
+ - org-capture :: capture tasks, todos.
+ - org-crypt :: to keep secrets like passwords in crypted sections
+ - org-feed :: Rss like news feeds.
 
 #+begin_src emacs-lisp
 (require 'org)
 (require 'org-capture)
 (require 'org-compat)
-(require 'org-install)
-;;(require 'org-exp-blocks)
+(requite 'org-crypt)
 (require 'org-feed)
 #+end_src
 
+We can also set up support for other programming languages:
+#+BEGIN_SRC emacs-lisp
+
+(eval-after-load 'org-babel
+  (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((clojure . t)
+       (sh . t)
+       (dot . t)
+       (mscgen . t) ;; message seq charts
+       (sql . t)
+       (calc . t)
+       (emacs-lisp . t)
+       (plantuml . t)
+       (ditaa . t))))
+
+(setq org-modules nil)
+
+#+END_SRC
 ** Literate programming in org-mode
 
 Org-babel provides the ability to write literate programming, as this
@@ -660,15 +747,30 @@ mode:
 (add-to-list 'auto-mode-alist '("\\.org" . poly-org-mode))
 #+end_src
 
-This does not work as it attempts to give the buffer two major modes using indirect buffers.  Instead I'll look at outshine https://github.com/tj64/outshine and outorg https://github.com/tj64/outorg which apparently gives views onto the literate org files.
-
-** Capturing notes
-
-#+begin_src emacs-lisp
-
+This does not work as it attempts to give the buffer two major modes
+using indirect buffers.  Instead I'll look at outshine
+https://github.com/tj64/outshine and outorg
+https://github.com/tj64/outorg which apparently gives views onto the
+literate org files.
+** Agenda
+Org mode has a comprehsive and flexible agenda and todo system.  This
+can help to stay organised.  We can set up the initial buffer to be
+the week's agenda:
+#+BEGIN_SRC emacs-lisp
 (setq initial-buffer-choice (lambda ()
      (org-agenda-list)
-     (get-buffer "*Org Agenda*")))    
+     (get-buffer "*Org Agenda*")))
+#+END_SRC
+There are some calendar integrations that I need to work through.
+#+BEGIN_SRC emacs-lisp
+
+(setq org-agenda-include-diary t)
+
+#+END_SRC
+** Capturing notes
+This section needs sorting out, is some ported remember templates and
+experimentation.
+#+begin_src emacs-lisp
 
 (setq org-default-notes-file (concat org-directory "/capture.org"))
 (define-key global-map "\C-cc" 'org-capture)
@@ -694,27 +796,16 @@ This does not work as it attempts to give the buffer two major modes using indir
         ("CANCELLED" . (:foreground "forest green"))
         ("TASK" . (:foreground "blue"))))
 
-;; org-mode support for languges allows #+BEGIN_SRC blocks
-(eval-after-load 'org-babel
-  (org-babel-do-load-languages
-     'org-babel-load-languages
-     '((clojure . t)
-       (sh . t)
-       (dot . t)
-       (mscgen . t) ;; message seq charts
-       (sql . t)
-       (calc . t)
-       (emacs-lisp . t)
-       (plantuml . t)
-       (ditaa . t))))
+#+END_SRC
 
+** Diagrams
+
+#+BEGIN_SRC emacs-lisp
 (setq org-plantuml-jar-path
       (expand-file-name (concat init/emacsd "/libs/plantuml.jar")))
 
 (setq org-ditaa-jar-path
       (expand-file-name (concat init/emacsd "/libs/ditaa0_9.jar")))
-
-(setq org-modules nil)
 
 (defun org-insert-link-as-file ()
   (interactive)
@@ -723,20 +814,22 @@ This does not work as it attempts to give the buffer two major modes using indir
 
 (add-hook 'org-load-hook
             (lambda ()
-				  (define-key org-mode-map (kbd "C-c C-g") 'org-insert-link-as-file)
-				  (define-key org-mode-map [ (super t) ] 'org-table-create-or-convert-from-region)
-				  (define-key org-mode-map [ (super c) ] 'org-codeblock-region)
+(define-key org-mode-map (kbd "C-c C-g") 'org-insert-link-as-file)
+(define-key org-mode-map [ (super t) ] 'org-table-create-or-convert-from-region)
+(define-key org-mode-map [ (super c) ] 'org-codeblock-region)
+               (whitespace-mode 0)
                (setq org-startup-indented t
-                     org-hide-leading-stars t)))
+                     org-hide-leading-stars t
+                     org-export-with-sub-superscripts nil
+                     org-special-ctrl-a/e t
+                     org-special-ctrl-k t
+                     org-yank-adjusted-subtrees t)))
 
 
-(setq org-export-with-sub-superscripts nil)
+
 ; Inline images in HTML instead of producting links to the image
 (setq org-export-html-inline-images t)
-; Do not use sub or superscripts - I currently don't need this functionality in my documents
 (setq org-export-with-sub-superscripts nil)
-
-
 
 (setq org-export-html-style-include-default t)
 ; Do not generate internal css formatting for HTML exports
@@ -746,28 +839,18 @@ This does not work as it attempts to give the buffer two major modes using indir
 
 (setq org-return-follows-link t)
 (setq org-tab-follows-link t)
+(setq org-src-fontify-natively t)
 
+(setq org-hide-leading-stars nil
+      org-cycle-separator-lines 2)
 
 (global-set-key "\C-cl" 'org-store-link)
 (global-set-key "\C-ca" 'org-agenda)
 (global-set-key "\C-cb" 'org-iswitchb)
 
-(setq org-todo-keywords (quote ((sequence "TODO(t!)" "STARTED(n!)" "|" "DONE(d!/!)")
-                                (sequence "HOLD(h@/!)" "SOMEDAY(s!)" "|" "CANCELLED(c@/!)")
 
-                                (sequence "OPEN(O!)" "|" "CLOSED(C!)"))))
-
-(setq org-todo-keyword-faces
-      (quote (("TODO"      :foreground "red"          :weight bold)
-              ("DONE"      :foreground "forest green" :weight bold)
-              ("HOLD"      :foreground "yellow"       :weight bold)
-              ("SOMEDAY"   :foreground "goldenrod"    :weight bold)
-              ("CANCELLED" :foreground "orangered"    :weight bold)
-              ("OPEN"      :foreground "magenta"      :weight bold)
-              ("CLOSED"    :foreground "forest green" :weight bold))))
-
-(setq org-agenda-files `( 
-  ,(concat org-directory "/gtd.org") 
+(setq org-agenda-files `(
+  ,(concat org-directory "/gtd.org")
   ,(concat org-directory "/tech.org")))
 
 (setq org-stuck-projects '( "HOLD|SOMEDAY|+SCHEDULED<\"<today>\"" ( "DONE" "CLOSED" "CANCELLED") nil "" ))
@@ -794,22 +877,23 @@ This does not work as it attempts to give the buffer two major modes using indir
                                         ; Use IDO for target completion
 (setq org-completion-use-ido t)
 
-                                        ; Targets include this file and any file contributing to the agenda - up to 5 levels deep
-                                        ;(setq org-refile-targets (quote ((org-agenda-files :maxlevel . 5) (nil :maxlevel . 5))))
-                                        ;(setq org-refile-use-outline-path (quote file))
-                                        ;(setq org-outline-path-complete-in-steps t)
-
 (setq org-refile-use-outline-path nil)
 (setq org-refile-targets (quote ((org-agenda-files :level . 1))))
 ;;(setq org-refile-targets '( (org-agenda-files :regexp . "Tasks") ))
 (setq org-outline-path-complete-in-steps nil)
 
+#+END_SRC
+*** Exporting documents
+Here we configure the export formats we need.
+#+BEGIN_SRC emacs-lisp
 
-                                        ;ical integration
-(setq org-agenda-include-diary t)
+(require 'ox-html)
+(require 'ox-md)
+(require 'ox-ascii)
+(require 'ox-org)
+(require 'ox-confluence)
 
-
-(require 'org-crypt) 
+(require 'org-crypt)
 (setq org-crypt-key "Andrew Gavin")
 
 (org-crypt-use-before-save-magic)
@@ -817,7 +901,7 @@ This does not work as it attempts to give the buffer two major modes using indir
 
 
 ;; Add feeds here
-;; 
+;;
 (setq org-feed-alist
       '(("Slashdot"
          "http://rss.slashdot.org/Slashdot/slashdot"
@@ -831,33 +915,34 @@ This does not work as it attempts to give the buffer two major modes using indir
             (company-mode)
             (yas-minor-mode)
             (set (make-local-variable 'company-backends)
-               '((company-dabbrev-code company-gtags company-etags company-keywords
-                  company-files company-dabbrev company-yasnippet)))))
+               '((company-dabbrev-code company-gtags company-etags
+                  company-keywords company-files company-dabbrev
+                  company-yasnippet)))))
 
 
-(defvar org-journal-file "~/Documents/org/journal.org"  
-  "Path to OrgMode journal file.")  
-(defvar org-journal-date-format "%Y-%m-%d"  
-  "Date format string for journal headings.")  
-  
-(defun org-journal-entry ()  
-  "Create a new diary entry for today or append to an existing one."  
-  (interactive)  
-  (switch-to-buffer (find-file org-journal-file))  
-  (widen)  
-  (let ((today (format-time-string org-journal-date-format)))  
-    (beginning-of-buffer)  
-    (unless (org-goto-local-search-forward-headings today nil t)  
-      ((lambda ()   
-         (org-insert-heading)  
-         (insert today)  
-         (insert "\n\n  \n"))))  
-    (beginning-of-buffer)  
-    (org-show-entry)  
-    (org-narrow-to-subtree)  
-    (end-of-buffer)  
-    (backward-char 2)  
-    (unless (= (current-column) 2)  
+(defvar org-journal-file "~/Documents/org/journal.org"
+  "Path to OrgMode journal file.")
+(defvar org-journal-date-format "%Y-%m-%d"
+  "Date format string for journal headings.")
+
+(defun org-journal-entry ()
+  "Create a new diary entry for today or append to an existing one."
+  (interactive)
+  (switch-to-buffer (find-file org-journal-file))
+  (widen)
+  (let ((today (format-time-string org-journal-date-format)))
+    (beginning-of-buffer)
+    (unless (org-goto-local-search-forward-headings today nil t)
+      ((lambda ()
+         (org-insert-heading)
+         (insert today)
+         (insert "\n\n  \n"))))
+    (beginning-of-buffer)
+    (org-show-entry)
+    (org-narrow-to-subtree)
+    (end-of-buffer)
+    (backward-char 2)
+    (unless (= (current-column) 2)
       (insert "\n\n  "))))
 
 #+end_src
@@ -889,4 +974,3 @@ have to set the emacs instance up as a server.
 #+begin_src emacs-lisp
 (or (server-running-p) (server-start))
 #+end_src
- 
