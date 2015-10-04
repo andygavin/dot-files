@@ -48,13 +48,18 @@ As I'm using aquamacs on the mac, I'm setting a constant for the
 
 ** Initial Setup
 
-There are a few things we want to do early to clean up the window.  For graphical versions of emacs they often have toolbars and menus.  We turn these off early to avoid them from appearing then disappearing.  Each of these is guarded by a predicate to ensure that the parameter exists in the environment:
+There are a few things we want to do early to clean up the window.
+For graphical versions of emacs they often have toolbars and menus.
+We turn these off early to avoid them from appearing then
+disappearing.  Guarding each switch is a predicate to ensure that
+the parameter exists in the environment:
 
 #+begin_src emacs-lisp
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 (if (custom-variable-p 'inhibit-splash-screen)  (setq inhibit-splash-screen t))
-(if (custom-variable-p 'inhibit-startup-message) (setq inhibit-startup-message t))
+(if (custom-variable-p 'inhibit-startup-message)
+                 (setq inhibit-startup-message t))
 #+end_src
 
 ** Ensure we have the packages we want
@@ -124,6 +129,9 @@ installation of the packages, and an area for custom lisp
                         rust-mode
                         flycheck-rust
                         plsql
+                        magit
+                        protobuf-mode
+                        sx
                         ) "Default packages")
 #+end_src
 
@@ -251,7 +259,7 @@ for aquamacs.
   (global-set-key (kbd "C-x C-b") 'ibuffer)
   (autoload 'ibuffer "ibuffer" "List buffers." t))
 
-(set-fringe-mode '(1 .  1))
+(set-fringe-mode '(5 .  5))
 
 (setq ido-enable-flex-matching t)
 (setq ido-show-dot-for-dired nil)
@@ -666,6 +674,14 @@ my twitter-client.
 ;;(setq twittering-bitly-api-key "")
 #+end_src
 
+* Stackoverflow
+I'm using ~sx~ to read and contribute to stackoverflow, this allows fast
+interaction and I find it can help build up my local notes in
+~org-mode~. Also there's reasonable interaction when in-buffer to look
+for answers or post questions. The mode uses stack-overflow's API
+which requires a key.  To set this call the ~sx-authenticate~
+function. The mode has a [[http://stackapps.com/questions/3950/sx-stack-exchange-for-emacs][StackApps page]].
+
 * XML
 
 #+begin_src emacs-lisp
@@ -708,7 +724,7 @@ rich with organisational features. Here we are loading:
 (require 'org)
 (require 'org-capture)
 (require 'org-compat)
-(requite 'org-crypt)
+(require 'org-crypt)
 (require 'org-feed)
 #+end_src
 
