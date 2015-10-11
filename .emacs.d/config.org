@@ -106,6 +106,7 @@ installation of the packages, and an area for custom lisp
                         htmlize
                         markdown-mode
                         o-blog
+                        guide-key
                         org
                         paredit
                         restclient
@@ -132,6 +133,9 @@ installation of the packages, and an area for custom lisp
                         magit
                         protobuf-mode
                         sx
+                        sqlplus
+                        ggtags
+                        undo-tree
                         ) "Default packages")
 #+end_src
 
@@ -205,6 +209,13 @@ whitespace so we'll get the editor to tidy it up.
 #+begin_src emacs-lisp
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+end_src
+
+Some tools like having a newline at the end of a file, we can arrange
+emacs to ensure this:
+
+#+BEGIN_SRC emacs-lisp
+(setq mode-require-final-newline t)
+#+END_SRC
 
 ** Encoding
 Most environments I work on now are 8-bit clean. Emacs interaction
@@ -483,7 +494,32 @@ snippets.
 (yas-global-mode 0)
 (yas-reload-all)
 #+end_src
+** Usability
+Keyguide helps for areas of the key-bindings that I don't always
+remember by popping up the possible completions.
+#+BEGIN_SRC emacs-lisp
+(require 'guide-key)
+(setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x 3" "C-x 8" "C-x 5"))
+(guide-key-mode 1)  ; Enable guide-key-mode
+#+END_SRC
+** Improved Undo
+Use undo-tree to improve undo behaviour
 
+#+BEGIN_SRC emacs-lisp
+(require 'undo-tree)
+(global-undo-tree-mode)
+#+END_SRC
+
+** Enable all features
+There some features of emacs which are not enabled by default. We want
+these features to enable these.
+
+#+BEGIN_SRC emacs-lisp
+;; Run at full power please
+(put 'downcase-region 'disabled nil)
+(put 'upcase-region 'disabled nil)
+(put 'narrow-to-region 'disabled nil)
+#+END_SRC
 * Programming Lisps
 One of the reasons that I wanted to reconfigure my emacs settings this
 time round was the adoption of Clojure.  Clojure's tooling and
@@ -665,6 +701,41 @@ layout.  Here we use the recommended suffixes to open sql in the plsql mode.
            '(("\\.\\(p\\(?:k[bg]\\|ls\\)\\|sql\\)\\'" . plsql-mode))
  auto-mode-alist))
 #+end_src
+* C/C++ Development
+An attempt at a rich configuration for c/c++ environments using the
+inbuild semantic capabilities.  First require the libraries we would like.
+
+#+BEGIN_SRC emacs-lisp
+(require 'cc-mode)
+(require 'semantic)
+(require 'ede)
+(require 'ggtags)
+#+END_SRC
+Semantic uses some background activities and functions that only
+operate on semantic enabled buffers.
+#+BEGIN_SRC emacs-lisp
+(setq semantic-default-submodes '(global-semanticdb-minor-mode global-semantic-idle-scheduler-mode global-semantic-stickyfunc-mode))
+#+END_SRC
+We then enable semantic on c/c++ buffers and fix some other aspects of
+the buffers.
+
+#+BEGIN_SRC emacs-lisp
+(add-hook 'c-mode-common-hook (lambda ()
+ (semantic-mode)
+ (ede-minor-mode)
+ (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
+              (ggtags-mode 1))))
+
+(define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
+(define-key ggtags-mode-map (kbd "C-c g h") 'ggtags-view-tag-history)
+(define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
+(define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
+(define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
+(define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags)
+
+(define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
+
+#+END_SRC
 * Tweeting
 I've never been a great tweeter, but occasionally I've used emacs as
 my twitter-client.
