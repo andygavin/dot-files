@@ -256,72 +256,72 @@ Winner mode is for recoving windows layouts, still need to fix this
 for aquamacs.
 
 #+begin_src emacs-lisp
-(when (fboundp 'winner-mode)
-(require 'winner)
-(setq winner-dont-bind-my-keys t) ;; default bindings conflict with org-mode
+  (when (fboundp 'winner-mode)
+    (require 'winner)
+    (setq winner-dont-bind-my-keys t) ;; default bindings conflict with org-mode
 
-(global-set-key (kbd "<C-s-left>") 'winner-undo)
-(global-set-key (kbd "<C-s-right>") 'winner-redo)
-(winner-mode t) ;; turn on the global minor mode
-)
-(when (fboundp 'windmove-default-keybindings)
-  (windmove-default-keybindings))
-(when (fboundp 'ibuffer)
-  (global-set-key (kbd "C-x C-b") 'ibuffer)
-  (autoload 'ibuffer "ibuffer" "List buffers." t))
+    (global-set-key (kbd "<C-s-left>") 'winner-undo)
+    (global-set-key (kbd "<C-s-right>") 'winner-redo)
+    (winner-mode t) ;; turn on the global minor mode
+    )
+  (when (fboundp 'windmove-default-keybindings)
+    (windmove-default-keybindings))
+  (when (fboundp 'ibuffer)
+    (global-set-key (kbd "C-x C-b") 'ibuffer)
+    (autoload 'ibuffer "ibuffer" "List buffers." t))
 
-(set-fringe-mode '(5 .  5))
+  (set-fringe-mode '(5 .  5))
 
-(setq ido-enable-flex-matching t)
-(setq ido-show-dot-for-dired nil)
-(ido-mode 1)
-(ido-ubiquitous-mode 1)
-(define-key global-map (kbd "C-c SPC") 'ace-jump-mode)
-(global-subword-mode 1)
-(global-set-key (kbd "C-z") 'undo)
-(require 'uniquify)
-(fset 'yes-or-no-p 'y-or-n-p)
+  (setq ido-enable-flex-matching t)
+  (setq ido-show-dot-for-dired nil)
+  (ido-mode 1)
+  (ido-ubiquitous-mode 1)
+  (define-key global-map (kbd "C-c SPC") 'ace-jump-mode)
+  (global-subword-mode 1)
+  (global-set-key (kbd "C-z") 'undo)
+  (require 'uniquify)
+  (fset 'yes-or-no-p 'y-or-n-p)
 
-(defun iwb ()
-  "indent whole buffer"
-  (interactive)
-  (delete-trailing-whitespace)
-  (indent-region (point-min) (point-max) nil)
-  (untabify (point-min) (point-max)))
+  (defun iwb ()
+    "indent whole buffer"
+    (interactive)
+    (delete-trailing-whitespace)
+    (indent-region (point-min) (point-max) nil)
+    (untabify (point-min) (point-max)))
 
-(global-set-key [(meta up)] 'move-line-up)
-(global-set-key [(meta down)] 'move-line-down)
+  (global-set-key [(meta up)] 'move-line-up)
+  (global-set-key [(meta down)] 'move-line-down)
 
-(defun move-line (&optional n)
-  "Move current line N (1) lines up/down leaving point in place."
-  (interactive "p")
-  (when (null n)
-    (setq n 1))
-  (let ((col (current-column)))
-    (beginning-of-line)
-    (next-line 1)
-    (transpose-lines n)
-    (previous-line 1)
-    (forward-char col)))
+  (defun move-line (&optional n)
+    "Move current line N (1) lines up/down leaving point in place."
+    (interactive "p")
+    (when (null n)
+      (setq n 1))
+    (let ((col (current-column)))
+      (beginning-of-line)
+      (next-line 1)
+      (transpose-lines n)
+      (previous-line 1)
+      (forward-char col)))
 
-(defun move-line-up (n)
-  "Moves current line N (1) lines up leaving point in place."
-  (interactive "p")
-  (move-line (if (null n) -1 (- n))))
+  (defun move-line-up (n)
+    "Moves current line N (1) lines up leaving point in place."
+    (interactive "p")
+    (move-line (if (null n) -1 (- n))))
 
-(defun move-line-down (n)
-  "Moves current line N (1) lines down leaving point in place."
-  (interactive "p")
-  (move-line (if (null n) 1 n)))
+  (defun move-line-down (n)
+    "Moves current line N (1) lines down leaving point in place."
+    (interactive "p")
+    (move-line (if (null n) 1 n)))
 
-(setq truncate-partial-width-windows nil)
-(setq default-truncate-lines nil)
+  (setq truncate-partial-width-windows nil)
+  (setq default-truncate-lines nil)
 
-(setq
- enable-recursive-minibuffers nil      ;;  don't allow mb cmds in the mb
- max-mini-window-height 3              ;;  max 3 lines
- minibuffer-scroll-window t            ;;  C-M-v scrolls....
- resize-mini-windows t)
+  (setq
+   enable-recursive-minibuffers nil      ;;  don't allow mb cmds in the mb
+   max-mini-window-height 3              ;;  max 3 lines
+   minibuffer-scroll-window t            ;;  C-M-v scrolls....
+   resize-mini-windows t)
 
 #+end_src
 *** Smex
@@ -333,40 +333,6 @@ for aquamacs.
 (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 #+end_src
 
-** Presentations
-*** For code in the editor
-Sometimes during presentations and we need to change the font. We can
-define some conventional keys for changing the font pitch:
-
-#+begin_src emacs-lisp
-(define-key global-map (kbd "C-+") 'text-scale-increase)
-(define-key global-map (kbd "C--") 'text-scale-decrease)
-#+end_src
-
-*** Producing Slides
-
-Org-mode does export to latex's beamer package to create slides.  This
-is configurable entirely from the file itself.  However here we set
-our preferred style.
-
-#+begin_src emacs-lisp
-(setq org-beamer-theme "CambridgeUS")
-#+end_src
-
-At the moment I'm prefering the following presentation options.
-
-#+begin_example
-#+BEAMER_THEME: CambridgeUS
-#+BEAMER_COLOR_THEME: dove
-
-
-#+OPTIONS: H:2 toc:t
-
-#+SELECT_TAGS: export
-#+EXCLUDE_TAGS: noexport
-
-#+COLUMNS: %20ITEM %13BEAMER_env(Env) %6BEAMER_envargs(Args) %4BEAMER_col(Col) %7BEAMER_extra(Extra)
-#+end_example
 
 ** Setting for the Mac
 
@@ -714,7 +680,10 @@ inbuild semantic capabilities.  First require the libraries we would like.
 Semantic uses some background activities and functions that only
 operate on semantic enabled buffers.
 #+BEGIN_SRC emacs-lisp
-(setq semantic-default-submodes '(global-semanticdb-minor-mode global-semantic-idle-scheduler-mode global-semantic-stickyfunc-mode))
+  (setq semantic-default-submodes
+        '(global-semanticdb-minor-mode
+          global-semantic-idle-scheduler-mode
+          global-semantic-stickyfunc-mode))
 #+END_SRC
 We then enable semantic on c/c++ buffers and fix some other aspects of
 the buffers.
@@ -888,86 +857,83 @@ experimentation.
 ** Diagrams
 
 #+BEGIN_SRC emacs-lisp
-(setq org-plantuml-jar-path
-      (expand-file-name (concat init/emacsd "/libs/plantuml.jar")))
+  (setq org-plantuml-jar-path
+        (expand-file-name (concat init/emacsd "/libs/plantuml.jar")))
 
-(setq org-ditaa-jar-path
-      (expand-file-name (concat init/emacsd "/libs/ditaa0_9.jar")))
+  (setq org-ditaa-jar-path
+        (expand-file-name (concat init/emacsd "/libs/ditaa0_9.jar")))
 
-(defun org-insert-link-as-file ()
-  (interactive)
-  (let ((current-prefix-arg '(4)))
-    (call-interactively 'org-insert-link)))
+  (defun org-insert-link-as-file ()
+    (interactive)
+    (let ((current-prefix-arg '(4)))
+      (call-interactively 'org-insert-link)))
 
-(add-hook 'org-load-hook
+  (add-hook 'org-load-hook
             (lambda ()
-(define-key org-mode-map (kbd "C-c C-g") 'org-insert-link-as-file)
-(define-key org-mode-map [ (super t) ] 'org-table-create-or-convert-from-region)
-(define-key org-mode-map [ (super c) ] 'org-codeblock-region)
-               (whitespace-mode 0)
-               (setq org-startup-indented t
-                     org-hide-leading-stars t
-                     org-export-with-sub-superscripts nil
-                     org-special-ctrl-a/e t
-                     org-special-ctrl-k t
-                     org-yank-adjusted-subtrees t)))
+              (define-key org-mode-map (kbd "C-c C-g") 'org-insert-link-as-file)
+              (define-key org-mode-map [ (super t) ] 'org-table-create-or-convert-from-region)
+              (define-key org-mode-map [ (super c) ] 'org-codeblock-region)
+              (whitespace-mode 0)
+              (setq org-startup-indented t
+                    org-hide-leading-stars t
+                    org-export-with-sub-superscripts nil
+                    org-special-ctrl-a/e t
+                    org-special-ctrl-k t
+                    org-yank-adjusted-subtrees t)))
 
 
 
-; Inline images in HTML instead of producting links to the image
-(setq org-export-html-inline-images t)
-(setq org-export-with-sub-superscripts nil)
+  ; Inline images in HTML instead of producting links to the image
+  (setq org-export-html-inline-images t)
+  (setq org-export-with-sub-superscripts nil)
 
-(setq org-export-html-style-include-default t)
-; Do not generate internal css formatting for HTML exports
-(setq org-export-htmlize-output-type (quote css))
-; Export with LaTeX fragments
-(setq org-export-with-LaTeX-fragments t)
+  (setq org-export-html-style-include-default t)
+  ; Do not generate internal css formatting for HTML exports
+  (setq org-export-htmlize-output-type (quote css))
+  ; Export with LaTeX fragments
+  (setq org-export-with-LaTeX-fragments t)
 
-(setq org-return-follows-link t)
-(setq org-tab-follows-link t)
-(setq org-src-fontify-natively t)
+  (setq org-return-follows-link t
+        org-tab-follows-link t
+        org-src-fontify-natively t)
 
-(setq org-hide-leading-stars nil
-      org-cycle-separator-lines 2)
+  (setq org-hide-leading-stars nil
+        org-cycle-separator-lines 2)
 
-(global-set-key "\C-cl" 'org-store-link)
-(global-set-key "\C-ca" 'org-agenda)
-(global-set-key "\C-cb" 'org-iswitchb)
-
-
-(setq org-agenda-files `(
-  ,(concat org-directory "/gtd.org")
-  ,(concat org-directory "/tech.org")))
-
-(setq org-stuck-projects '( "HOLD|SOMEDAY|+SCHEDULED<\"<today>\"" ( "DONE" "CLOSED" "CANCELLED") nil "" ))
-;;(setq org-mobile-directory "~/Dropbox/MobileOrg/")
-;;(setq org-mobile-inbox-for-pull "~/org/inbox.txt")
-(setq org-archive-location (concat org-directory "/archive.org::Archive"))
-
-(setq org-default-notes-file (concat org-directory "/notes.org"))
-(setq org-special-ctrl-a/e t)
-(setq org-return-follows-link nil)
-(setq org-fast-tag-selection-single-key t)
-
-(setq org-tag-alist '(
-                      ("@home" . ?h)
-                      ("@office" . ?o)
-                      ("@phone" . ?p)
-                      ("crypt" . ?s)
-                      ("@toread" . ?r)
-                      ("personal" . ?x)))
-
-(setq org-log-done 'time)
+  (global-set-key "\C-cl" 'org-store-link)
+  (global-set-key "\C-ca" 'org-agenda)
+  (global-set-key "\C-cb" 'org-iswitchb)
 
 
-                                        ; Use IDO for target completion
-(setq org-completion-use-ido t)
+  (setq org-agenda-files `(
+                           ,(concat org-directory "/gtd.org")
+                           ,(concat org-directory "/tech.org")))
 
-(setq org-refile-use-outline-path nil)
-(setq org-refile-targets (quote ((org-agenda-files :level . 1))))
-;;(setq org-refile-targets '( (org-agenda-files :regexp . "Tasks") ))
-(setq org-outline-path-complete-in-steps nil)
+  (setq org-stuck-projects '( "HOLD|SOMEDAY|+SCHEDULED<\"<today>\"" ( "DONE" "CLOSED" "CANCELLED") nil "" ))
+  (setq org-archive-location (concat org-directory "/archive.org::Archive"))
+
+  (setq org-default-notes-file (concat org-directory "/notes.org"))
+  (setq org-special-ctrl-a/e t)
+  (setq org-return-follows-link nil)
+  (setq org-fast-tag-selection-single-key t)
+
+  (setq org-tag-alist '(
+                        ("@home" . ?h)
+                        ("@office" . ?o)
+                        ("@phone" . ?p)
+                        ("crypt" . ?s)
+                        ("@toread" . ?r)
+                        ("personal" . ?x)))
+
+  (setq org-log-done 'time)
+
+
+                                          ; Use IDO for target completion
+  (setq org-completion-use-ido t)
+
+  (setq org-refile-use-outline-path nil)
+  (setq org-refile-targets (quote ((org-agenda-files :level . 1))))
+  (setq org-outline-path-complete-in-steps nil)
 
 #+END_SRC
 *** Exporting documents
@@ -979,6 +945,7 @@ Here we configure the export formats we need.
 (require 'ox-ascii)
 (require 'ox-org)
 (require 'ox-confluence)
+(require 'ox-latex)
 
 (require 'org-crypt)
 (setq org-crypt-key "Andrew Gavin")
@@ -1033,6 +1000,69 @@ Here we configure the export formats we need.
       (insert "\n\n  "))))
 
 #+end_src
+*** Keeping track of references
+Bibtex can be useful for keeping track of books and articles that you
+have read in an easy text format.  Then this is easy for citation in
+presentation handouts.  When a document uses references in a bibtex
+file latex may need running multiple times.  To make this process
+easier we can change the export command to use a script that detects
+the executions needed to format the document.
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-pdf-process (list "latexmk -f -pdf %f"))
+#+END_SRC
+** Presentations
+*** For code in the editor
+Sometimes during presentations and we need to change the font. We can
+define some conventional keys for changing the font pitch:
+
+#+begin_src emacs-lisp
+(define-key global-map (kbd "C-+") 'text-scale-increase)
+(define-key global-map (kbd "C--") 'text-scale-decrease)
+#+end_src
+
+*** Producing Slides
+
+Org-mode does export to latex's beamer package to create slides.  This
+is configurable entirely from the file itself.  However here we set
+our preferred style.
+
+#+begin_src emacs-lisp
+(setq org-beamer-theme "CambridgeUS")
+#+end_src
+
+At the moment I'm prefering the following presentation options.
+
+#+begin_example
+#+BEAMER_THEME: CambridgeUS
+#+BEAMER_COLOR_THEME: dove
+
+
+#+OPTIONS: H:2 toc:t
+
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+
+#+COLUMNS: %20ITEM %13BEAMER_env(Env) %6BEAMER_envargs(Args) %4BEAMER_col(Col) %7BEAMER_extra(Extra)
+#+end_example
+*** Handouts
+
+Technical presentations are all well and good, but often a practical
+element is best to really give the audience the knowlege that you
+indend to convay.  For a more workshop like presentation it is useful
+to produce a set of handouts to accompany the practical session.
+Latex has a really good package: [[https://tufte-latex.github.io/tufte-latex/][Tufte-latex]].  Which takes it's
+inspiration from the typography of /Edward Tufte/.  Here we're setting
+up a hand-out format for org-mode:
+#+BEGIN_SRC emacs-lisp
+  (eval-after-load 'ox-latex
+    (add-to-list 'org-latex-classes '( "handout"
+                                       "\\documentclass{tufte-handout}"
+                                       ("\\section{%s}" . "\\section*{%s}")
+                                       ("\\subsection{%s}" . "\\subsection*{%s}")
+                                       ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                                       ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+#+END_SRC
+
 
 * EPA
 
