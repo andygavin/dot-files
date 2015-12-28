@@ -879,7 +879,8 @@ experimentation.
                     org-export-with-sub-superscripts nil
                     org-special-ctrl-a/e t
                     org-special-ctrl-k t
-                    org-yank-adjusted-subtrees t)))
+                    org-yank-adjusted-subtrees t)
+             )
 
 
 
@@ -887,6 +888,11 @@ experimentation.
   (setq org-export-html-inline-images t)
   (setq org-export-with-sub-superscripts nil)
 
+  (require 'ox-taskjuggler)
+  (require 'ox-confluence)
+
+  (add-to-list 'org-export-backends 'taskjuggler)
+  (add-to-list 'org-export-backends 'confluence)
   (setq org-export-html-style-include-default t)
   ; Do not generate internal css formatting for HTML exports
   (setq org-export-htmlize-output-type (quote css))
