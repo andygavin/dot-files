@@ -561,7 +561,7 @@ feeback from eldoc.
 Cider is the clojure mode of choice. First we set up lein and our
 preferences for the REPL.
 #+begin_src emacs-lisp
-(setq cider-lein-command "~/bin/lein"
+(setq cider-lein-command (concat (or (getenv "LEIN_HOME") "~") "/bin/lein")
       cider-repl-history-file (concat init/emacsd "/cider-history")
       cider-repl-use-pretty-printing t
       cider-repl-use-clojure-font-lock t
