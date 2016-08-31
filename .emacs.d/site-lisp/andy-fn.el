@@ -356,6 +356,32 @@ by using nxml's indentation rules."
           (concat "&" (car pair) ";")
           nil start end)))))
 
+(defun untabify-buffer ()
+  "Canvienience function to untabify buffer."
+  (interactive)
+  (untabify (point-min) (point-max)))
+
+(defun indent-buffer ()
+  "Canvienience function to indent buffer."
+  (interactive)
+  (indent-region (point-min) (point-max)))
+
+(defun yas-expand-in-buffer (buffer snippet)
+  "crude attempt at yas expansion of SNIPPET in BUFFER."
+  (interactive "bBuffer:\nsSnippet:")
+  (with-current-buffer buffer
+    (insert snippet)
+    (yas-expand))
+  )
+
+;;TODO COMPLETE
+(defun to-java-builder (start end)
+  "Convert fields in region delimited by START and END to simple builder."
+  (interactive "r")
+  (goto-char begin)
+  (while (search-forward-regexp "" end t)
+    (backward-char 2) (insert "\n") (incf end))
+  )
 
 
 (provide 'andy-fn)

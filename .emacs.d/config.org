@@ -117,6 +117,7 @@ installation of the packages, and an area for custom lisp
                         rust-mode
                         exec-path-from-shell
                         zenburn-theme
+                        dakrone-theme
                         s
                         epg
                         twittering-mode
@@ -379,8 +380,7 @@ conventions, albeit on the windows keys:
 ** Themes
 
 #+begin_src emacs-lisp
-(color-theme-initialize)
-(load-theme 'zenburn t)
+(load-theme 'dakrone t)
 #+end_src
 ** Backups
 I'd prefer not to place backups in the current directory when saving
@@ -667,6 +667,13 @@ layout.  Here we use the recommended suffixes to open sql in the plsql mode.
            '(("\\.\\(p\\(?:k[bg]\\|ls\\)\\|sql\\)\\'" . plsql-mode))
  auto-mode-alist))
 (autoload 'plsql-mode "plsql" "Oracle Pl/SQL mode" t)
+(add-hook 'plsql-mode-hook (lambda ()
+            (company-mode)
+            (yas-minor-mode)
+            (set (make-local-variable 'company-backends)
+               '((company-dabbrev-code
+                  company-keywords
+                  company-yasnippet)))))
 #+end_src
 * C/C++ Development
 An attempt at a rich configuration for c/c++ environments using the
@@ -882,7 +889,7 @@ experimentation.
                     org-special-ctrl-k t
                     org-yank-adjusted-subtrees t)
              )
-
+)
 
 
   ; Inline images in HTML instead of producting links to the image
@@ -1061,13 +1068,13 @@ Latex has a really good package: [[https://tufte-latex.github.io/tufte-latex/][T
 inspiration from the typography of /Edward Tufte/.  Here we're setting
 up a hand-out format for org-mode:
 #+BEGIN_SRC emacs-lisp
-  (eval-after-load 'ox-latex
-    (add-to-list 'org-latex-classes '( "handout"
-                                       "\\documentclass{tufte-handout}"
-                                       ("\\section{%s}" . "\\section*{%s}")
-                                       ("\\subsection{%s}" . "\\subsection*{%s}")
-                                       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-                                       ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+;;  (eval-after-load 'ox-latex
+;;    (add-to-list 'org-latex-classes '( "handout"
+;;                                       "\\documentclass{tufte-handout}"
+;;                                       ("\\section{%s}" . "\\section*{%s}")
+;;                                       ("\\subsection{%s}" . "\\subsection*{%s}")
+;;                                       ("\\paragraph{%s}" . "\\paragraph*{%s}")
+;;                                       ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 #+END_SRC
 
 
