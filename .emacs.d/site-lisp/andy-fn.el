@@ -71,7 +71,7 @@ by using nxml's indentation rules."
 (defun andy/open-buffer-path ()
   "Run explorer on the directory of the current buffer."
   (interactive)
-  (shell-command (concat "explorer" (replace-regexp-in-string "/" "\\" (file-buffer-path)))))
+  (shell-command (concat "explorer" (replace-regexp-in-string "/" "\\" (file-name-directory (file-buffer-name)) t t))))
 
 (defun andy/resolve-svn (verbose)
   "Resolve a set of svn conflicts when selected in the dir view."
@@ -382,6 +382,67 @@ by using nxml's indentation rules."
   (while (search-forward-regexp "" end t)
     (backward-char 2) (insert "\n") (incf end))
   )
+;; Prototype
+
+(defun andy--extract-elements (elem from)
+  "Extact column numbers ELEM from seq FROM."
+  (let ((a elem)
+        (f from)
+        (v))
+    (dolist (elt a v)
+      (setq v (cons (nth elt f) v)))))
+
+(defun andy--pair-val-cols (c v joiner)
+  (mapcar* (lambda (x y) (concat x joiner y)) c v))
+
+(defun andy--collect-cols (selection names joiner cols)
+  (andy--extract-elements selection (andy--pair-val-cols names cols joiner)))
+
+(defun orgtbl-to-sqlupdate (table params)
+  "Convert TABLE to sql update statements, PARAMS is the parameter list of parameters from the table as a plist."
+  (let* (
+         (*orgtbl-default-fmt* 'orgtbl-sql-strip-and-quote)
+         (table-name (plist-get params :db-table))
+         (colnames (plist-get params :col-names))
+         (where-cols (plist-get params :where-cols))
+         (set-cols (plist-get params :set-cols))
+         (update-statement (concat "UPDATE " table-name " SET ")))
+    (orgtbl-to-generic table
+                       (org-combine-plists (list
+                                            :hlfmt ""
+                                            :lfmt (lambda (&rest cols)
+                                                    (concat update-statement
+                                                            (mapconcat #'identity (andy--collect-cols set-cols colnames "=" cols) ",")
+                                                            " WHERE "
+                                                            (mapconcat #'identity (andy--collect-cols where-cols colnames "=" cols) " AND ")
+                                                            ";"))
+                                            :remove-newlines t)
+                                           params))))
+
+;;copy from orgtbl-sqlinsert
+(defun orgtbl-sql-quote (str)
+  "Convert single ticks to doubled single ticks and wrap in single ticks."
+  (concat "'" (mapconcat 'identity (split-string str "'") "''") "'"))
+
+(defun orgtbl-sql-strip-dollars-escapes-tildes (str)
+  "Strip dollarsigns and backslash escapes, replace tildes with spaces."
+  (mapconcat 'identity
+	     (split-string (mapconcat 'identity
+				      (split-string str "\\$\\|\\\\")
+				      "")
+			   "~")
+	     " "))
+
+(defun orgtbl-sql-strip-and-quote (str)
+  "Apply ORGBTL-SQL-QUOTE and ORGTBL-SQL-STRIP-DOLLARS-ESCAPES-TILDES
+to sanitize STR for use in SQL statements."
+  (cond ((stringp str)
+         (orgtbl-sql-quote (orgtbl-sql-strip-dollars-escapes-tildes str)))
+        ((sequencep str) (mapcar 'orgtbl-sql-strip-and-quote str))
+        (t nil)))
+
+(defun andy-insert-yas (template &optional start end params)
+  (yas-expand-snippet (yas-lookup-snippet template) start end params))
 
 
 (provide 'andy-fn)

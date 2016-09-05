@@ -1,24 +1,21 @@
 * converting table
 
-#+ORGTBL: SEND exsql orgtbl-to-generic :sqlname "extbl" :fmt (2 "%s") :tstart "#+BEGIN_EXAMPLE\nBEGIN TRANSACTION;" :tend "COMMIT;\n#+END_EXAMPLE"
-#+ORGTBL: SEND csvinfo orgtbl-to-csv
+;#+ORGTBL: SEND csvinfo orgtbl-to-csv
+#+ORGTBL: SEND exsql orgtbl-to-sqlupdate :db-table "example" :skipcols () :col-names ("col1" "col2" "where1" "where2") :set-cols (0 1) :where-cols (2 3)
 | test | test2 | where1 | where2 |
 |------+-------+--------+--------|
 |    1 |     2 |      3 |      4 |
 |    3 |     5 |      7 |      5 |
+
+
 
 #+BEGIN RECEIVE ORGTBL csvinfo
 test,test2,where1,where2
 1,2,3,4
 3,5,7,5
 #+END RECEIVE ORGTBL csvinfo
-
 #+BEGIN RECEIVE ORGTBL exsql
-#+BEGIN_EXAMPLE
-BEGIN TRANSACTION;
-testtest2where1where2
-1234
-3575
-COMMIT;
-#+END_EXAMPLE
+
+UPDATE example SET col2='2',col1='1' WHERE where2='4' AND where1='3';
+UPDATE example SET col2='5',col1='3' WHERE where2='5' AND where1='7';
 #+END RECEIVE ORGTBL exsql

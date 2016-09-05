@@ -60,6 +60,16 @@ the parameter exists in the environment:
 (if (custom-variable-p 'inhibit-splash-screen)  (setq inhibit-splash-screen t))
 (if (custom-variable-p 'inhibit-startup-message)
                  (setq inhibit-startup-message t))
+
+(setq use-file-dialog nil)
+(setq use-dialog-box nil)
+(if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
+(column-number-mode)
+(setq inhibit-startup-screen t)
+
+(setq ring-bell-function 'ignore)
+
+
 #+end_src
 
 ** Ensure we have the packages we want
@@ -76,7 +86,6 @@ order. We assume that emacs includes the its default.
 (setq package-user-dir (concat init/emacsd "elpa"))
 (add-to-list 'load-path (concat init/emacsd "site-lisp"))
 #+end_src
-
 Here we have also set where the package manager will place the
 installation of the packages, and an area for custom lisp
 ~site-lisp~. The packages we want to ensure we have are:
@@ -87,10 +96,12 @@ installation of the packages, and an area for custom lisp
                         ace-jump-mode
                         epl
                         yasnippet
+                        aws-ec2
                         diminish
                         use-package
                         cider
                         company
+                        company-restclient
                         hl-sexp
                         clj-refactor
                         let-alist
@@ -99,7 +110,7 @@ installation of the packages, and an area for custom lisp
                         flycheck
                         feature-mode
                         gist
-                       ;; breadcrumb
+                        darkroom
                         go-mode
                         graphviz-dot-mode
                         haskell-mode
@@ -123,6 +134,7 @@ installation of the packages, and an area for custom lisp
                         twittering-mode
                         sqlplus
                         linum
+                        csv-mode
                         ;; aggressive-indent
                         regex-tool
                         world-time-mode
