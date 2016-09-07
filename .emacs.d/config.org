@@ -72,6 +72,16 @@ the parameter exists in the environment:
 
 #+end_src
 
+Operating system specific code
+#+BEGIN_SRC emacs-lisp
+(defmacro with-system (type &rest body)
+  "Evaluate BODY if `system-type' equals TYPE."
+  (declare (indent defun))
+  `(when (eq system-type ',type)
+     ,@body))
+#+END_SRC
+
+
 ** Ensure we have the packages we want
 To assume the least about the what has been shipped with the version
 of emacs we have we will use the now standard package manager.  First
@@ -136,7 +146,8 @@ installation of the packages, and an area for custom lisp
                         linum
                         csv-mode
                         ;; aggressive-indent
-                        regex-tool
+                        neotree
+§                       regex-tool
                         world-time-mode
                         perl-completion
                         polymode
@@ -192,11 +203,13 @@ To enable the use of SSH I will typically store the output of ssh-agent in .ssh-
 If this exists we'll add it to the environment that emacs exports.
 
 #+BEGIN_SRC emacs-lisp
-(if (file-exists-p "~/.ssh-agent")
+(setq ssh-agent-file
+   (concat (if (eq system-type 'windows-nt) (getenv "CYG_HOME") "~") "/.ssh-agent")
+(if (file-exists-p ssh-agent-file)
     (with-temp-buffer
-        (insert-file-contents "~/.ssh-agent")
+        (insert-file-contents ssh-agent-file)
         (save-match-data
-          (while (search-forward-regexp "^\\([A-Z_]*\\) *= *\\([^;]*\\)" end t)
+          (while (search-forward-regexp "^\\([A-Z_]*\\) *= *\\([^;]*\\)" nil t)
             (setenv (match-string 1) (match-string 2))))))
 #+END_SRC
 * General Editing
@@ -386,7 +399,8 @@ to custom functions as well as supporting some of the Windows
 conventions, albeit on the windows keys:
 
 #+begin_src emacs-lisp
-(when (string-equal system-type "windows-nt")
+
+(with-system windows-nt
     (setq w32-enable-caps-lock nil
           w32-enable-num-lock nil
           w32-apps-modifier 'hyper
@@ -396,9 +410,7 @@ conventions, albeit on the windows keys:
           w32-pass-rwindow-to-system nil
 
           )
-    (define-key global-map [?\s-x] 'kill-region)
-    (define-key global-map [?\s-x] 'kill-ring-save)
-    (define-key global-map [?\s-x] 'yank)
+(require 'fakecygpty)
     )
 #+end_src
 ** Themes
