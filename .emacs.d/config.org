@@ -187,6 +187,18 @@ Now we can ensure that our list of packages are installed:
 ;;(package-initialize)
 #+end_src
 
+** Ssh keys
+To enable the use of SSH I will typically store the output of ssh-agent in .ssh-agent.
+If this exists we'll add it to the environment that emacs exports.
+
+#+BEGIN_SRC emacs-lisp
+(if (file-exists-p "~/.ssh-agent")
+    (with-temp-buffer
+        (insert-file-contents "~/.ssh-agent")
+        (save-match-data
+          (while (search-forward-regexp "^\\([A-Z_]*\\) *= *\\([^;]*\\)" end t)
+            (setenv (match-string 1) (match-string 2))))))
+#+END_SRC
 * General Editing
 Before we start setting up different modes for specific operations and
 languages first we'll set up some global settings and try and
