@@ -413,6 +413,7 @@ conventions, albeit on the windows keys:
 (require 'fakecygpty)
     )
 #+end_src
+In addition we've set up fake pty to enable the use of tramp and other tools.
 ** Themes
 
 #+begin_src emacs-lisp
@@ -496,6 +497,12 @@ snippets.
 (yas-global-mode 0)
 (yas-reload-all)
 #+end_src
+
+We also should set up how the presentation of choices are made when rendering snippets.
+At the moment we prefer a dropdown in-buffer.
+#+BEGIN_SRC emacs-lisp
+(setq 'yas-prompt-functions '(yas-dropdown-prompt yas-completing-prompt yas-ido-prompt yas-no-prompt)
+#+END_SRC
 ** Usability
 Keyguide helps for areas of the key-bindings that I don't always
 remember by popping up the possible completions.
