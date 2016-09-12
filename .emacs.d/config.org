@@ -140,6 +140,7 @@ installation of the packages, and an area for custom lisp
                         zenburn-theme
                         dakrone-theme
                         s
+                        symon
                         epg
                         twittering-mode
                         sqlplus
@@ -204,7 +205,7 @@ If this exists we'll add it to the environment that emacs exports.
 
 #+BEGIN_SRC emacs-lisp
 (setq ssh-agent-file
-   (concat (if (eq system-type 'windows-nt) (getenv "CYG_HOME") "~") "/.ssh-agent")
+   (concat (if (eq system-type 'windows-nt) (getenv "CYG_HOME") "~") "/.ssh-agent"))
 (if (file-exists-p ssh-agent-file)
     (with-temp-buffer
         (insert-file-contents ssh-agent-file)
@@ -501,7 +502,7 @@ snippets.
 We also should set up how the presentation of choices are made when rendering snippets.
 At the moment we prefer a dropdown in-buffer.
 #+BEGIN_SRC emacs-lisp
-(setq 'yas-prompt-functions '(yas-dropdown-prompt yas-completing-prompt yas-ido-prompt yas-no-prompt)
+(setq yas-prompt-functions '(yas-dropdown-prompt yas-completing-prompt yas-ido-prompt yas-no-prompt))
 #+END_SRC
 ** Usability
 Keyguide helps for areas of the key-bindings that I don't always
@@ -625,6 +626,11 @@ Refactoring in enabled and bound to a key.
 #+begin_src emacs-lisp
 ;; eldoc for clojure
 (add-hook 'cider-mode-hook #'eldoc-mode)
+;; while we are at it for elisp too
+(add-hook 'emacs-lisp-mode-hook 'eldoc-mode)
+(add-hook 'lisp-interaction-mode-hook 'eldoc-mode)
+(add-hook 'ielm-mode-hook 'eldoc-mode)
+(add-hook 'eval-expression-minibuffer-setup-hook 'eldoc-mode)
 
 
 ;; error buffer not popping up
@@ -1008,7 +1014,7 @@ Here we configure the export formats we need.
 (setq org-crypt-key "Andrew Gavin")
 
 (org-crypt-use-before-save-magic)
-;;(setq org-tags-exclude-from-inheritance (quote ("crypt")))
+(setq org-tags-exclude-from-inheritance (quote ("crypt")))
 
 
 ;; Add feeds here
