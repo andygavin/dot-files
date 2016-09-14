@@ -509,7 +509,7 @@ Keyguide helps for areas of the key-bindings that I don't always
 remember by popping up the possible completions.
 #+BEGIN_SRC emacs-lisp
 (require 'guide-key)
-(setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x 3" "C-x 8" "C-x 5"))
+(setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x 3" "C-x 8" "C-x 5" "C-c"))
 (guide-key-mode 1)  ; Enable guide-key-mode
 #+END_SRC
 ** Improved Undo
@@ -635,6 +635,12 @@ Refactoring in enabled and bound to a key.
 
 ;; error buffer not popping up
 (setq cider-show-error-buffer nil)
+#+END_SRC
+
+Now we want to set some preferences so we get some more modern IDE like feature.  Company mode
+for dropdown completion, yasnippet for templates and refactoring.
+
+#+BEGIN_SRC emacs-lisp
 
 ;; company mode for completion
 
@@ -654,6 +660,15 @@ Refactoring in enabled and bound to a key.
       cljr-favor-prefix-notation nil)
 
 #+end_src
+
+*** Clojure script
+By default the clojurescript repl will fire up rhino, we want to connect to the browser that runs
+our code.  This is a little more involved and presently means that the project needs setting up
+with the correct middleware and dependencies.
+
+#+BEGIN_SRC emacs-lisp
+(setq cider-cljs-lein-repl "(do (use 'figwheel-sidecar.repl-api) (start-figwheel!) (cljs-repl))")
+#+END_SRC
 
 ** Autoinserting templates
 I find autoinserting useful as well as templates.  These insert intial
