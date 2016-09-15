@@ -82,7 +82,7 @@ Operating system specific code
 #+END_SRC
 
 
-** Ensure we have the packages we want
+* Ensure we have the packages we want
 To assume the least about the what has been shipped with the version
 of emacs we have we will use the now standard package manager.  First
 we will set up some decent well known repositories, these are used in
@@ -129,6 +129,7 @@ installation of the packages, and an area for custom lisp
                         o-blog
                         guide-key
                         org
+                        org-jira
                         paredit
                         restclient
                         smex
@@ -148,10 +149,10 @@ installation of the packages, and an area for custom lisp
                         csv-mode
                         ;; aggressive-indent
                         neotree
-§                       regex-tool
+                        regex-tool
                         world-time-mode
                         perl-completion
-                        polymode
+                       ; polymode ;; doesn't work in org-mode yet
                         rust-mode
                         flycheck-rust
                         plsql
@@ -372,7 +373,11 @@ for aquamacs.
 (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 #+end_src
 
-
+** Multiple Cursors
+The multiple cursors package is prticuarly good for sections of similar structure.
+#+BEGIN_SRC emacs-lisp
+(require 'multiple-cursors)
+#+END_SRC
 ** Setting for the Mac
 
 #+begin_src emacs-lisp
@@ -530,6 +535,7 @@ these features to enable these.
 (put 'upcase-region 'disabled nil)
 (put 'narrow-to-region 'disabled nil)
 #+END_SRC
+
 * Programming Lisps
 One of the reasons that I wanted to reconfigure my emacs settings this
 time round was the adoption of Clojure.  Clojure's tooling and
@@ -1175,4 +1181,17 @@ have to set the emacs instance up as a server.
 Load my personal functions
 #+BEGIN_SRC emacs-lisp
 (require 'andy-fn)
+#+END_SRC
+
+* Misc
+** Stock ticker
+Some stocks that we're watching.
+#+BEGIN_SRC emacs-lisp
+(stock-ticker-global-mode +1)
+(setq stock-ticker-symbols '("TSLA" "SKY.L" "DIS"))
+#+END_SRC
+** Sysmon
+#+BEGIN_SRC emacs-lisp
+(require 'symon)
+(symon-mode)
 #+END_SRC
