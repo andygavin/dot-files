@@ -377,6 +377,9 @@ for aquamacs.
 The multiple cursors package is prticuarly good for sections of similar structure.
 #+BEGIN_SRC emacs-lisp
 (require 'multiple-cursors)
+(global-set-key (kbd "C->") 'mc/mark-next-like-this)
+(global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
 #+END_SRC
 ** Setting for the Mac
 
@@ -1177,6 +1180,20 @@ have to set the emacs instance up as a server.
              (server-running-p))
  (server-start))
 #+end_src
+
+* News and information
+Here is a quick attempt at using gnus and feeds.  Needs refining and testing.
+#+BEGIN_EXAMPLE emacs-lisp
+(setq gnus-select-method '(nntp "news.gmane.org")
+      gnus-secondary-select-methods '((nntp "news.gwene.org"))
+      gnus-check-new-newsgroups nil)
+
+;;; Scoring
+(setq gnus-use-adaptive-scoring t
+      gnus-thread-sort-function 'gnus-thread-sort-by-score)
+
+#+END_EXAMPLE
+
 * My functions
 Load my personal functions
 #+BEGIN_SRC emacs-lisp
