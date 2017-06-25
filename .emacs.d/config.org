@@ -149,10 +149,10 @@ installation of the packages, and an area for custom lisp
                         csv-mode
                         ;; aggressive-indent
                         neotree
+                        projectile
                         regex-tool
                         world-time-mode
                         perl-completion
-                       ; polymode ;; doesn't work in org-mode yet
                         rust-mode
                         flycheck-rust
                         plsql
@@ -162,6 +162,8 @@ installation of the packages, and an area for custom lisp
                         sqlplus
                         ggtags
                         undo-tree
+                        plantuml-mode
+                        powerline
                         ) "Default packages")
 #+end_src
 
@@ -365,12 +367,13 @@ for aquamacs.
 
 #+end_src
 *** Smex
-@@html:<kbd>M-x</kbd>@@ enhancement to extend ido to the M-x function.  These are the keybindings frfrom the page: [[https://github.com/nonsequitur/smex/][Smex Github page]]
+@@html:<kbd>M-x</kbd>@@ enhancement to extend ido to the M-x function.
+These are the keybindings from the page: [[https://github.com/nonsequitur/smex/][Smex Github page]]
 #+begin_src emacs-lisp
 (global-set-key (kbd "M-x") 'smex)
 (global-set-key (kbd "M-X") 'smex-major-mode-commands)
 ;; This is your old M-x.
-(global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
+(global-set-key (kbd "C-c M-x") 'execute-extended-command)
 #+end_src
 
 ** Multiple Cursors
@@ -420,7 +423,11 @@ conventions, albeit on the windows keys:
 
           )
 (require 'fakecygpty)
-    )
+(defun open-buffer-path-in-explorer()
+"Run explorer for the directory for the file associated with current buffer."
+(interactive)
+(shell-command (concat "explorer" (replace-regexp-in-string "/" "\\" (file-name-directory (buffer-file-name)) t t)))
+    ))
 #+end_src
 In addition we've set up fake pty to enable the use of tramp and other tools.
 ** Themes
@@ -517,8 +524,9 @@ Keyguide helps for areas of the key-bindings that I don't always
 remember by popping up the possible completions.
 #+BEGIN_SRC emacs-lisp
 (require 'guide-key)
-(setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x 3" "C-x 8" "C-x 5" "C-c"))
+(setq guide-key/guide-key-sequence '("C-x" "C-c"))
 (guide-key-mode 1)  ; Enable guide-key-mode
+(diminish 'guide-key-mode)
 #+END_SRC
 ** Improved Undo
 Use undo-tree to improve undo behaviour
@@ -539,6 +547,48 @@ these features to enable these.
 (put 'narrow-to-region 'disabled nil)
 #+END_SRC
 
+** Status line
+Reduce the space needed on the status line.
+#+BEGIN_SRC emacs-lisp
+(eval-after-load "company"
+      '(diminish 'company-mode "Cmp"))
+  (eval-after-load "abbrev"
+    '(diminish 'abbrev-mode "Ab"))
+  (eval-after-load "yasnippet"
+    '(diminish 'yas/minor-mode "Y"))
+
+#+END_SRC
+* File navigation
+Sometimes file navigation can be less easy than in some editors, to enable working
+with files easier there's a number of packages that can help.
+** Neotree
+Gives a directory tree like view, which we can toggle off and on.
+#+BEGIN_SRC emacs-lisp
+(defun neotree-project-dir-toggle ()
+  "Open NeoTree using the project root, using find-file-in-project,
+or the current buffer directory."
+  (interactive)
+  (let ((project-dir
+         (ignore-errors
+           ;;; Pick one: projectile or find-file-in-project
+           ; (projectile-project-root)
+           (ffip-project-root)
+           ))
+        (file-name (buffer-file-name))
+        (neo-smart-open t))
+    (if (and (fboundp 'neo-global--window-exists-p)
+             (neo-global--window-exists-p))
+        (neotree-hide)
+      (progn
+        (neotree-show)
+        (if project-dir
+            (neotree-dir project-dir))
+        (if file-name
+            (neotree-find file-name))))))
+
+ (global-set-key [f8] 'neotree-project-dir-toggle)
+ (setq neo-smart-open t)
+#+END_SRC
 * Programming Lisps
 One of the reasons that I wanted to reconfigure my emacs settings this
 time round was the adoption of Clojure.  Clojure's tooling and
@@ -564,6 +614,7 @@ becauses much easier.
 
 #+begin_src emacs-lisp
 (require 'paredit)
+(add-hook 'paredit-mode-hook (lambda () (diminish 'paredit-mode " φ ")))
 (add-hook 'lisp-mode-hook #'paredit-mode)
 (add-hook 'emacs-lisp-mode-hook #'paredit-mode)
 (add-hook 'clojure-mode-hook #'paredit-mode)
@@ -571,6 +622,8 @@ becauses much easier.
 
 (with-eval-after-load 'eldoc
   (eldoc-add-command 'paredit-backward-delete 'paredit-close-round))
+
+(diminish 'lisp-interaction-mode " υ ")
 #+end_src
 
 ** Highlight Sexp
@@ -595,7 +648,7 @@ depending on the language.  For clojure the best at the moment is
 
 #+begin_src emacs-lisp
 
-(require 'flycheck)
+(require 'flycheck-clojure)
 
 (eval-after-load 'flycheck '(flycheck-clojure-setup))
 
@@ -622,7 +675,14 @@ preferences for the REPL.
       cider-repl-wrap-history t
       cider-repl-history-size 3000)
 
-(add-hook 'cider-repl-mode-hook #'company-mode)
+(add-hook 'cider-repl-mode-hook
+(lambda ()
+            (company-mode)
+            (yas-minor-mode)
+            (set (make-local-variable 'company-backends)
+               '((company-dabbrev-code
+                  company-keywords
+                  company-yasnippet)))))
 #+end_src
 
 For editing we set up eldoc and configure completion. We are also
@@ -657,7 +717,7 @@ for dropdown completion, yasnippet for templates and refactoring.
 
 (add-hook 'clojure-mode-hook
 	  (lambda ()
-	    (clj-refactor-mode 1)
+	    ;(clj-refactor-mode 1)
 	    ;; insert keybinding setup here
 	    (cljr-add-keybindings-with-prefix "C-c RET")))
 
@@ -847,6 +907,7 @@ rich with organisational features. Here we are loading:
 (require 'org-compat)
 (require 'org-crypt)
 (require 'org-feed)
+(diminish 'org-mode " Θ ")
 #+end_src
 
 We can also set up support for other programming languages:
@@ -964,6 +1025,8 @@ experimentation.
              )
 )
 
+(add-to-list 'org-latex-packages-alist
+             '("" "tikz" t))
 
   ; Inline images in HTML instead of producting links to the image
   (setq org-export-html-inline-images t)
@@ -1194,21 +1257,40 @@ Here is a quick attempt at using gnus and feeds.  Needs refining and testing.
 
 #+END_EXAMPLE
 
-* My functions
-Load my personal functions
-#+BEGIN_SRC emacs-lisp
-(require 'andy-fn)
-#+END_SRC
-
 * Misc
 ** Stock ticker
 Some stocks that we're watching.
 #+BEGIN_SRC emacs-lisp
-(stock-ticker-global-mode +1)
-(setq stock-ticker-symbols '("TSLA" "SKY.L" "DIS"))
+;;(stock-ticker-global-mode +1)
+;(setq stock-ticker-symbols '("TSLA" "SKY.L" "DIS"))
 #+END_SRC
 ** Sysmon
 #+BEGIN_SRC emacs-lisp
 (require 'symon)
-(symon-mode)
+;(symon-mode)
+(setq symon-delay 30)
+#+END_SRC
+
+* My functions
+** Convinence functions
+#+BEGIN_SRC emacs-lisp
+
+(defun untabify-buffer ()
+  "Canvienience function to untabify buffer."
+  (interactive)
+  (untabify (point-min) (point-max)))
+
+(defun indent-buffer ()
+  "Canvienience function to indent buffer."
+  (interactive)
+  (indent-region (point-min) (point-max)))
+
+(defun insert-yas (template &optional start end params)
+  (interactive "sTemplate: ")
+  (yas-expand-snippet (yas-lookup-snippet template) start end params))
+
+#+END_SRC
+Load my personal functions
+#+BEGIN_SRC emacs-lisp
+(require 'andy-fn)
 #+END_SRC
